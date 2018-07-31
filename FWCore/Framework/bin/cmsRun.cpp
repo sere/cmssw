@@ -37,6 +37,8 @@ PSet script.   See notes in EventProcessor.cpp for details about it.
 #include <memory>
 #include <string>
 #include <vector>
+#include <mpi.h>
+#include <cassert>
 
 //Command line parameters
 static char const* const kParameterSetOpt = "parameter-set";
@@ -123,6 +125,9 @@ namespace {
 }
 
 int main(int argc, char* argv[]) {
+
+  int provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
   edm::TimingServiceBase::jobStarted();
   
@@ -394,5 +399,6 @@ int main(int argc, char* argv[]) {
   }
   // Disable Root Error Handler.
   SetErrorHandler(DefaultErrorHandler);
+  MPI_Finalize();
   return returnCode;
 }
