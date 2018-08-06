@@ -36,7 +36,6 @@ void CoutAnalyzer::analyze(edm::Event const &event,
     edm::Handle<std::string> handle;
     event.getByToken(token_, handle);
     edm::LogPrint("CoutAnalyzer") << *handle << std::endl;
-    std::cout << "In CoutAnalyzer::analyze" << std::endl;
 }
 
 void CoutAnalyzer::fillDescriptions(

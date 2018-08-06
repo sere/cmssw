@@ -1,19 +1,31 @@
 # MPICore
 
-The module consists of two paths, `stringSend` and `stringRecv`.
+The module consists of two paths, `cpuNode` and `gpuNode`.
 They communicate between each other through MPI calls.
 
-## stringSend
+## cpuNode
 
-This path is composed by StringProducer:EDProducer that produces
-the string "Hello World" and by MPIAnalyzer:EDAnalyzer that consumes
-a string and sends it to the `stringRecv` path via a MPI_Send call.
+This path acts as the master of the protocol. It creates and offloads
+work to be executed by `gpuNode`.
+  - StringProducer:EDProducer produces the message "Hello World";
+  - OffloadProducer::EDProducer consumes the message and sends it to
+    the GPU node via an MPI_Send, then receives the answer with the
+    MPI_Mprobe and MPI_Mrecv calls;
+  - CoutAnalyzer::EDAnalyzer consumes the answer and prints on the
+    terminal with edm::LogPrint().
 
-## stringRecv
+## gpuNode
 
-This path is composed by MPIProducer:EDProducer that receives a string
-via a MPI_Mprobe and MPI_MRecv calls and by CoutAnalyzer:EDAnalyzer that
-outputs the string on the terminal.
+This path acts as the slave of the protocol. It waits for the work that
+has to be executed.
+  - FetchProducer::EDProducer waits and receives the message from the CPU
+    node, then produces it unmodified;
+  - WorkProducer::EDProducer consumes the message and executes the
+    associated job (for now, waiting a random amount of time and adding
+    the mpi_id to the string), then produces the answer to be sent to
+    the CPU node;
+  - SendAnalyzer::EDAnalyzer consumes the answer and sends it to the CPU
+    node via an MPI_Send.
 
 ### Building
 
@@ -32,7 +44,7 @@ using the mpiCC wrapper. They were found respectively with the commands
 To run the module issue
 
 ```
-mpirun -n 1 cmsRun stringSend.py : -n 1 cmsRun stringRecv.py
+mpirun -n 1 cmsRun cpuNode.py : -n 1 cmsRun gpuNode.py
 ```
 
 into the `test` folder. This runs the two paths, both in only one instance,

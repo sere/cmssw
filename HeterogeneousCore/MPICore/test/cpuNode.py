@@ -8,13 +8,17 @@ process.produce = cms.EDProducer("StringProducer",
     message = cms.string("Hello world")
 )
 
-process.analyze = cms.EDAnalyzer("MPIAnalyzer",
+process.offload = cms.EDProducer("OffloadProducer",
     msg_source = cms.InputTag("produce")
 )
 
-process.path = cms.Path( process.produce + process.analyze )
+process.analyze = cms.EDAnalyzer("CoutAnalyzer",
+    source = cms.InputTag("offload")
+)
+
+process.path = cms.Path( process.produce + process.offload + process.analyze )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32( 1 )
+    input = cms.untracked.int32( 2 )
 )
 

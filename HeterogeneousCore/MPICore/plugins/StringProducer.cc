@@ -35,11 +35,11 @@ StringProducer::StringProducer(const edm::ParameterSet &config)
 void StringProducer::beginStream(edm::StreamID sid) { sid_ = sid; }
 
 void StringProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
-    auto message = std::make_unique<std::string>(message_);
-    *message += " from sid ";
-    *message += std::to_string(sid_);
+    auto msg = std::make_unique<std::string>(message_);
+    *msg += " from sid ";
+    *msg += std::to_string(sid_);
     usleep(1000000);
-    event.put(std::move(message));
+    event.put(std::move(msg));
 }
 
 void StringProducer::fillDescriptions(
