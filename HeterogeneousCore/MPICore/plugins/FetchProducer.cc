@@ -13,48 +13,44 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/StreamID.h"
 
-class MPIProducer : public edm::stream::EDProducer<> {
+class FetchProducer : public edm::stream::EDProducer<> {
 public:
-    explicit MPIProducer(const edm::ParameterSet &config);
-    ~MPIProducer() override = default;
+    explicit FetchProducer(const edm::ParameterSet &config);
+    ~FetchProducer() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
 private:
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
-
-    std::string message_;
 };
 
-MPIProducer::MPIProducer(const edm::ParameterSet &config)
-    : message_(config.getParameter<std::string>("mpi_message")) {
-
+FetchProducer::FetchProducer(const edm::ParameterSet &config) {
     produces<std::string>();
 }
 
-void MPIProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
+void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     MPI_Message message;
     MPI_Status status;
     int count;
 
     MPI_Mprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &message, &status);
-    std::cout << "Probed tag " << status.MPI_TAG << " from node "
-              << status.MPI_SOURCE << std::endl;
+    edm::LogInfo("FetchProducer")
+            << status.MPI_TAG << " from node " << status.MPI_SOURCE;
 
     MPI_Get_count(&status, MPI_CHAR, &count);
 
     char *rec_buf = new char[count];
     MPI_Mrecv(static_cast<void *>(rec_buf), count, MPI_CHAR, &message, &status);
-    std::cout << "Buffer received, value " << rec_buf << std::endl;
-    message_ = rec_buf;
-    auto msg = std::make_unique<std::string>(message_);
+    edm::LogInfo("FetchProducer") << "Buffer received, value " << rec_buf;
+
+    auto msg = std::make_unique<std::string>(rec_buf);
     event.put(std::move(msg));
 }
 
-void MPIProducer::fillDescriptions(
+void FetchProducer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
     desc.add<std::string>("mpi_message", "");
-    descriptions.add("mpiProducer", desc);
+    descriptions.add("fetchProducer", desc);
 }
 
-DEFINE_FWK_MODULE(MPIProducer);
+DEFINE_FWK_MODULE(FetchProducer);

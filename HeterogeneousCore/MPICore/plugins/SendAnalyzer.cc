@@ -1,3 +1,4 @@
+#include "constants.h"
 #include <iostream>
 #include <mpi.h>
 
@@ -7,16 +8,18 @@
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
+
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-class MPIAnalyzer : public edm::stream::EDAnalyzer<> {
+class SendAnalyzer : public edm::stream::EDAnalyzer<> {
 public:
-    explicit MPIAnalyzer(const edm::ParameterSet &config);
-    ~MPIAnalyzer() override = default;
+    explicit SendAnalyzer(const edm::ParameterSet &config);
+    ~SendAnalyzer() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
 private:
@@ -26,24 +29,27 @@ private:
     edm::EDGetTokenT<std::string> token_;
 };
 
-MPIAnalyzer::MPIAnalyzer(const edm::ParameterSet &config)
+SendAnalyzer::SendAnalyzer(const edm::ParameterSet &config)
     : token_(consumes<std::string>(
-              config.getParameter<edm::InputTag>("msg_source"))) {}
+              config.getParameter<edm::InputTag>("source"))) {}
 
-void MPIAnalyzer::analyze(edm::Event const &event,
-                          edm::EventSetup const &setup) {
+void SendAnalyzer::analyze(edm::Event const &event,
+                           edm::EventSetup const &setup) {
     edm::Handle<std::string> handle;
     event.getByToken(token_, handle);
+
+    int cpu_pe = 0;
+
     MPI_Send(static_cast<void const *>(handle.product()->data()),
-             handle.product()->size(), MPI_CHAR, 1, 0, MPI_COMM_WORLD);
-    std::cout << "Buffer sent" << std::endl;
+             handle.product()->size() + 1, MPI_CHAR, cpu_pe, WORKTAG,
+             MPI_COMM_WORLD);
 }
 
-void MPIAnalyzer::fillDescriptions(
+void SendAnalyzer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
-    desc.add<edm::InputTag>("msg_source", edm::InputTag());
-    descriptions.add("mpiAnalyzer", desc);
+    desc.add<edm::InputTag>("source", edm::InputTag());
+    descriptions.add("sendAnalyzer", desc);
 }
 
-DEFINE_FWK_MODULE(MPIAnalyzer);
+DEFINE_FWK_MODULE(SendAnalyzer);
