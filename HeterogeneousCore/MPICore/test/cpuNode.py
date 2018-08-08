@@ -4,21 +4,19 @@ process = cms.Process("TEST")
 
 process.source = cms.Source("EmptySource")
 
-process.produce = cms.EDProducer("StringProducer",
-    message = cms.string("Hello world")
-)
+process.produce = cms.EDProducer("ArraysProducer")
 
 process.offload = cms.EDProducer("OffloadProducer",
-    msg_source = cms.InputTag("produce")
+    arrays = cms.InputTag("produce")
 )
 
 process.analyze = cms.EDAnalyzer("CoutAnalyzer",
-    source = cms.InputTag("offload")
+    result = cms.InputTag("offload")
 )
 
 process.path = cms.Path( process.produce + process.offload + process.analyze )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32( 2 )
+    input = cms.untracked.int32( 1 )
 )
 

@@ -7,10 +7,11 @@ They communicate between each other through MPI calls.
 
 This path acts as the master of the protocol. It creates and offloads
 work to be executed by `gpuNode`.
-  - StringProducer:EDProducer produces the message "Hello World";
-  - OffloadProducer::EDProducer consumes the message and sends it to
-    the GPU node via an MPI_Send, then receives the answer with the
-    MPI_Mprobe and MPI_Mrecv calls;
+  - ArraysProducer:EDProducer produces a std::vector<double> of 2000000
+    random elements;
+  - OffloadProducer::EDProducer consumes the vector and sends it to
+    the GPU node via MPI_Send, then receives the answer with MPI_Mprobe
+    and MPI_Mrecv;
   - CoutAnalyzer::EDAnalyzer consumes the answer and prints on the
     terminal with edm::LogPrint().
 
@@ -18,14 +19,12 @@ work to be executed by `gpuNode`.
 
 This path acts as the slave of the protocol. It waits for the work that
 has to be executed.
-  - FetchProducer::EDProducer waits and receives the message from the CPU
+  - FetchProducer::EDProducer waits and receives the vector from the CPU
     node, then produces it unmodified;
-  - WorkProducer::EDProducer consumes the message and executes the
-    associated job (for now, waiting a random amount of time and adding
-    the mpi_id to the string), then produces the answer to be sent to
-    the CPU node;
-  - SendAnalyzer::EDAnalyzer consumes the answer and sends it to the CPU
-    node via an MPI_Send.
+  - WorkProducer::EDProducer consumes the vector, views it as two vectors
+    of equal length and produces the element-wise sum of the two vectors;
+  - SendAnalyzer::EDAnalyzer consumes the result and sends it to the CPU
+    node via MPI_Send.
 
 ### Building
 
