@@ -1,8 +1,7 @@
 #include <mpi.h>
 #include <unistd.h>
 
-#include <chrono>
-#include <thread>
+#include "constants.h"
 
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 
@@ -24,36 +23,35 @@ public:
 
 private:
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
-
-    edm::EDGetTokenT<std::string> token_;
+    edm::EDGetTokenT<std::vector<double>> token_;
+    std::vector<double> result_;
 };
 
 WorkProducer::WorkProducer(const edm::ParameterSet &config)
-    : token_(consumes<std::string>(config.getParameter<edm::InputTag>("job"))) {
+    : token_(consumes<std::vector<double>>(
+              config.getParameter<edm::InputTag>("job"))),
+      result_(ARRAY_SIZE) {
 
-    produces<std::string>();
+    produces<std::vector<double>>();
 }
 
 void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
-    edm::Handle<std::string> handle;
+    edm::Handle<std::vector<double>> handle;
     event.getByToken(token_, handle);
 
-    int mpi_id;
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_id);
-    std::string result = "mpi_id ";
-    result += std::to_string(mpi_id);
+    auto mid = (*handle).begin() + (*handle).size() / 2;
+    std::transform((*handle).begin(), mid - 1, mid, result_.begin(),
+                   std::plus<double>());
 
-    std::this_thread::sleep_for(
-            std::chrono::milliseconds((std::rand() % 100 + 1) * 10));
-
-    auto msg = std::make_unique<std::string>(result);
+    auto msg = std::make_unique<std::vector<double>>(result_);
+    usleep(1000000);
     event.put(std::move(msg));
 }
 
 void WorkProducer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
-    desc.add<std::string>("job", "");
+    desc.add<edm::InputTag>("job", edm::InputTag());
     descriptions.add("workProducer", desc);
 }
 

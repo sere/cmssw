@@ -24,24 +24,24 @@ private:
     void analyze(edm::Event const &event,
                  edm::EventSetup const &setup) override;
 
-    edm::EDGetTokenT<std::string> token_;
+    edm::EDGetTokenT<std::vector<double>> token_;
 };
 
 CoutAnalyzer::CoutAnalyzer(const edm::ParameterSet &config)
-    : token_(consumes<std::string>(
-              config.getParameter<edm::InputTag>("source"))) {}
+    : token_(consumes<std::vector<double>>(
+              config.getParameter<edm::InputTag>("result"))) {}
 
 void CoutAnalyzer::analyze(edm::Event const &event,
                            edm::EventSetup const &setup) {
-    edm::Handle<std::string> handle;
+    edm::Handle<std::vector<double>> handle;
     event.getByToken(token_, handle);
-    edm::LogPrint("CoutAnalyzer") << *handle << std::endl;
+    edm::LogPrint("CoutAnalyzer") << "received results" << std::endl;
 }
 
 void CoutAnalyzer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
-    desc.add<edm::InputTag>("source", edm::InputTag());
+    desc.add<edm::InputTag>("result", edm::InputTag());
     descriptions.add("coutAnalyzer", desc);
 }
 

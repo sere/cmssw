@@ -1,6 +1,8 @@
 #include <mpi.h>
 #include <unistd.h>
 
+#include "constants.h"
+
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 
 // Configuration
@@ -24,7 +26,7 @@ private:
 };
 
 FetchProducer::FetchProducer(const edm::ParameterSet &config) {
-    produces<std::string>();
+    produces<std::vector<double>>();
 }
 
 void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
@@ -36,20 +38,23 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     edm::LogInfo("FetchProducer")
             << status.MPI_TAG << " from node " << status.MPI_SOURCE;
 
-    MPI_Get_count(&status, MPI_CHAR, &count);
+    MPI_Get_count(&status, MPI_DOUBLE, &count);
 
-    char *rec_buf = new char[count];
-    MPI_Mrecv(static_cast<void *>(rec_buf), count, MPI_CHAR, &message, &status);
-    edm::LogInfo("FetchProducer") << "Buffer received, value " << rec_buf;
+    assert(count == MATR_SIZE);
 
-    auto msg = std::make_unique<std::string>(rec_buf);
+    std::vector<double> rec_buf(count);
+    MPI_Mrecv(static_cast<void *>(rec_buf.data()), count, MPI_DOUBLE, &message,
+              &status);
+    edm::LogInfo("FetchProducer") << "Buffer received";
+
+    auto msg = std::make_unique<std::vector<double>>(rec_buf);
     event.put(std::move(msg));
 }
 
 void FetchProducer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
+    std::vector<double> emptyDoubleVector;
     edm::ParameterSetDescription desc;
-    desc.add<std::string>("mpi_message", "");
     descriptions.add("fetchProducer", desc);
 }
 

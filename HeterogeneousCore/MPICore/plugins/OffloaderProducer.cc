@@ -24,49 +24,51 @@ public:
 private:
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
 
-    edm::EDGetTokenT<std::string> token_;
+    edm::EDGetTokenT<std::vector<double>> token_;
 };
 
 OffloadProducer::OffloadProducer(const edm::ParameterSet &config)
-    : token_(consumes<std::string>(
-              config.getParameter<edm::InputTag>("msg_source"))) {
+    : token_(consumes<std::vector<double>>(
+              config.getParameter<edm::InputTag>("arrays"))) {
 
-    produces<std::string>();
+    produces<std::vector<double>>();
 }
 
 void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
-    edm::Handle<std::string> handle;
+    edm::Handle<std::vector<double>> handle;
     event.getByToken(token_, handle);
 
     int gpu_pe = 1;
+    double starttime, endtime;
+    starttime = MPI_Wtime();
     MPI_Send(static_cast<void const *>(handle.product()->data()),
-             handle.product()->size(), MPI_CHAR, gpu_pe, WORKTAG,
+             handle.product()->size(), MPI_DOUBLE, gpu_pe, WORKTAG,
              MPI_COMM_WORLD);
-    edm::LogInfo("OffloadProducer") << "Buffer sent to node " << gpu_pe;
+    endtime = MPI_Wtime();
+    edm::LogInfo("OffloadProducer")
+            << "Buffer sent to node " << gpu_pe << " in " << endtime - starttime
+            << " seconds.";
 
     MPI_Message message;
     MPI_Status status;
     MPI_Mprobe(gpu_pe, WORKTAG, MPI_COMM_WORLD, &message, &status);
 
     int count;
-    MPI_Get_count(&status, MPI_CHAR, &count);
-    std::cout << count << std::endl;
+    MPI_Get_count(&status, MPI_DOUBLE, &count);
 
-    char *rec_buf = new char[count];
-    MPI_Mrecv(static_cast<void *>(rec_buf), count, MPI_CHAR, &message, &status);
-    std::string recv = rec_buf;
+    std::vector<double> recv(count);
+    assert(count == ARRAY_SIZE);
+    MPI_Mrecv(static_cast<void *>(recv.data()), count, MPI_DOUBLE, &message,
+              &status);
 
-    auto msg = std::make_unique<std::string>(*handle.product());
-    *msg += " return value: ";
-    *msg += recv;
-    usleep(1000000);
+    auto msg = std::make_unique<std::vector<double>>(recv);
     event.put(std::move(msg));
 }
 
 void OffloadProducer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
-    desc.add<edm::InputTag>("msg_source", edm::InputTag());
+    desc.add<edm::InputTag>("arrays", edm::InputTag());
     descriptions.add("offloadProducer", desc);
 }
 
