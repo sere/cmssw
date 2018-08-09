@@ -1,7 +1,7 @@
 #include "constants.h"
+#include <iostream>
 #include <random>
 #include <unistd.h>
-#include <iostream>
 #include <vector>
 
 #include "FWCore/Framework/interface/stream/EDProducer.h"

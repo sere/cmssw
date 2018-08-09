@@ -40,9 +40,8 @@ void SendAnalyzer::analyze(edm::Event const &event,
 
     int cpu_pe = 0;
 
-    MPI_Send(static_cast<void const *>((*handle).data()),
-             (*handle).size(), MPI_DOUBLE, cpu_pe, WORKTAG,
-             MPI_COMM_WORLD);
+    MPI_Send(static_cast<void const *>((*handle).data()), (*handle).size(),
+             MPI_DOUBLE, cpu_pe, WORKTAG, MPI_COMM_WORLD);
 }
 
 void SendAnalyzer::fillDescriptions(
