@@ -14,10 +14,10 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-class CoutAnalyzer : public edm::stream::EDAnalyzer<> {
+class PrintAnalyzer : public edm::stream::EDAnalyzer<> {
 public:
-    explicit CoutAnalyzer(const edm::ParameterSet &config);
-    ~CoutAnalyzer() override = default;
+    explicit PrintAnalyzer(const edm::ParameterSet &config);
+    ~PrintAnalyzer() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
 private:
@@ -27,22 +27,22 @@ private:
     edm::EDGetTokenT<std::vector<double>> token_;
 };
 
-CoutAnalyzer::CoutAnalyzer(const edm::ParameterSet &config)
+PrintAnalyzer::PrintAnalyzer(const edm::ParameterSet &config)
     : token_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("result"))) {}
 
-void CoutAnalyzer::analyze(edm::Event const &event,
+void PrintAnalyzer::analyze(edm::Event const &event,
                            edm::EventSetup const &setup) {
     edm::Handle<std::vector<double>> handle;
     event.getByToken(token_, handle);
-    edm::LogPrint("CoutAnalyzer") << "received results" << std::endl;
+    edm::LogPrint("PrintAnalyzer") << "received results" << std::endl;
 }
 
-void CoutAnalyzer::fillDescriptions(
+void PrintAnalyzer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
     desc.add<edm::InputTag>("result", edm::InputTag());
-    descriptions.add("coutAnalyzer", desc);
+    descriptions.add("printAnalyzer", desc);
 }
 
-DEFINE_FWK_MODULE(CoutAnalyzer);
+DEFINE_FWK_MODULE(PrintAnalyzer);
