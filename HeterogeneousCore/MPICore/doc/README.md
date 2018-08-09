@@ -22,7 +22,8 @@ has to be executed.
   - FetchProducer::EDProducer waits and receives the vector from the CPU
     node, then produces it unmodified;
   - WorkProducer::EDProducer consumes the vector, views it as two vectors
-    of equal length and produces the element-wise sum of the two vectors;
+    of equal length and produces the element-wise sum of the two vectors.
+    The sum is executed both on the CPU and on the GPU of this node;
   - SendAnalyzer::EDAnalyzer consumes the result and sends it to the CPU
     node via MPI_Send.
 
