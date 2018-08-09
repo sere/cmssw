@@ -10,7 +10,7 @@ process.offload = cms.EDProducer("OffloadProducer",
     arrays = cms.InputTag("produce")
 )
 
-process.analyze = cms.EDAnalyzer("CoutAnalyzer",
+process.analyze = cms.EDAnalyzer("PrintAnalyzer",
     result = cms.InputTag("offload")
 )
 

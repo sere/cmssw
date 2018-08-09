@@ -12,7 +12,7 @@ work to be executed by `gpuNode`.
   - OffloadProducer::EDProducer consumes the vector and sends it to
     the GPU node via MPI_Send, then receives the answer with MPI_Mprobe
     and MPI_Mrecv;
-  - CoutAnalyzer::EDAnalyzer consumes the answer and prints on the
+  - PrintAnalyzer::EDAnalyzer consumes the answer and prints on the
     terminal with edm::LogPrint().
 
 ## gpuNode
