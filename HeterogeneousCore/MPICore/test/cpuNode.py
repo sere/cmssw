@@ -11,12 +11,13 @@ process.offload = cms.EDProducer("OffloadProducer",
 )
 
 process.analyze = cms.EDAnalyzer("PrintAnalyzer",
-    result = cms.InputTag("offload")
+    result = cms.InputTag("offload"),
+    times = cms.InputTag("offload")
 )
 
 process.path = cms.Path( process.produce + process.offload + process.analyze )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32( 1 )
+    input = cms.untracked.int32( 1001 )
 )
 

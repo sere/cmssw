@@ -32,6 +32,7 @@ OffloadProducer::OffloadProducer(const edm::ParameterSet &config)
               config.getParameter<edm::InputTag>("arrays"))) {
 
     produces<std::vector<double>>();
+    produces<std::map<std::string, double>>();
 }
 
 void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
@@ -39,15 +40,12 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     event.getByToken(token_, handle);
 
     int gpu_pe = 1;
-    double starttime, endtime;
-    starttime = MPI_Wtime();
-    MPI_Send(static_cast<void const *>(handle.product()->data()),
-             handle.product()->size(), MPI_DOUBLE, gpu_pe, WORKTAG,
-             MPI_COMM_WORLD);
-    endtime = MPI_Wtime();
-    edm::LogInfo("OffloadProducer")
-            << "Buffer sent to node " << gpu_pe << " in " << endtime - starttime
-            << " seconds.";
+    std::map<std::string, double> times;
+    times["offloadStart"] = MPI_Wtime();
+    MPI_Ssend(static_cast<void const *>(handle.product()->data()),
+              handle.product()->size(), MPI_DOUBLE, gpu_pe, WORKTAG,
+              MPI_COMM_WORLD);
+    times["sendJobEnd"] = MPI_Wtime();
 
     MPI_Message message;
     MPI_Status status;
@@ -60,9 +58,28 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     assert(count == ARRAY_SIZE);
     MPI_Mrecv(static_cast<void *>(recv.data()), count, MPI_DOUBLE, &message,
               &status);
+    times["offloadEnd"] = MPI_Wtime();
 
+    // MPI_Mprobe(gpu_pe, 0, MPI_COMM_WORLD, &message, &status);
+    // MPI_Get_count(&status, MPI_CHAR, &count);
+    // std::vector<std::string> labels(count);
+    // MPI_Mrecv(static_cast<void *>(labels.data()), count, MPI_CHAR, &message,
+    //           &status);
+
+    MPI_Mprobe(gpu_pe, 0, MPI_COMM_WORLD, &message, &status);
+    MPI_Get_count(&status, MPI_DOUBLE, &count);
+    std::vector<double> values(count);
+    MPI_Mrecv(static_cast<void *>(values.data()), count, MPI_DOUBLE, &message,
+              &status);
+
+    for (unsigned int i = 0; i < values.size(); i++) {
+        times[std::to_string(i)] = values[i];
+    }
     auto msg = std::make_unique<std::vector<double>>(recv);
+    auto timesUniquePtr =
+            std::make_unique<std::map<std::string, double>>(times);
     event.put(std::move(msg));
+    event.put(std::move(timesUniquePtr));
 }
 
 void OffloadProducer::fillDescriptions(
