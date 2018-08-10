@@ -74,6 +74,7 @@ namespace DataFormats_WrappedStdDictionaries {
   edm::Wrapper<std::map<std::basic_string<char>,std::vector<std::pair<std::basic_string<char>,double> > > > dummyypwmv8;
   edm::Wrapper<std::map<int,std::pair<unsigned int,unsigned int> > > dummyypwmv9;
   edm::Wrapper<std::map<int,std::pair<unsigned long,unsigned long> > > dummyypwmv10;
+  edm::Wrapper<std::map<std::string,double> > dummywmsd;
 
   edm::Wrapper<unsigned long> dummyw1;
   edm::Wrapper<unsigned int> dummyw2;
