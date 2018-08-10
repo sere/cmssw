@@ -27,6 +27,7 @@ private:
 
 FetchProducer::FetchProducer(const edm::ParameterSet &config) {
     produces<std::vector<double>>();
+    produces<std::map<std::string, double>>();
 }
 
 void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
@@ -35,25 +36,25 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     int count;
 
     MPI_Mprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &message, &status);
-    edm::LogInfo("FetchProducer")
-            << status.MPI_TAG << " from node " << status.MPI_SOURCE;
 
     MPI_Get_count(&status, MPI_DOUBLE, &count);
-
     assert(count == MATR_SIZE);
 
     std::vector<double> rec_buf(count);
+    std::map<std::string, double> times;
     MPI_Mrecv(static_cast<void *>(rec_buf.data()), count, MPI_DOUBLE, &message,
               &status);
-    edm::LogInfo("FetchProducer") << "Buffer received";
+    times["jobStart"] = MPI_Wtime();
 
     auto msg = std::make_unique<std::vector<double>>(rec_buf);
+    auto timesUniquePtr =
+            std::make_unique<std::map<std::string, double>>(times);
     event.put(std::move(msg));
+    event.put(std::move(timesUniquePtr));
 }
 
 void FetchProducer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
-    std::vector<double> emptyDoubleVector;
     edm::ParameterSetDescription desc;
     descriptions.add("fetchProducer", desc);
 }

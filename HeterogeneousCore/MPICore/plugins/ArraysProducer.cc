@@ -34,6 +34,15 @@ ArraysProducer::ArraysProducer(const edm::ParameterSet &config)
     auto rand = std::bind(distribution, std::ref(generator));
     std::generate(arrays_.begin(), arrays_.end(), rand);
 
+#if DEBUG
+    edm::LogPrint("ArraysProducer") << "First array:";
+    for (int i = 0; i < std::min(10, vectorLength_); i++)
+        edm::LogPrint("ArraysProducer") << arrays_[i];
+    edm::LogPrint("ArrayProducer");
+    edm::LogPrint("ArraysProducer") << "Second array:";
+    for (int i = 0; i < std::min(10, vectorLength_); i++)
+        edm::LogPrint("ArraysProducer") << arrays_[i + vectorLength_];
+#endif
     produces<std::vector<double>>();
 }
 

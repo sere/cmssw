@@ -22,6 +22,11 @@ __global__ void addVector(double *arrays, double *result) {
         result[x] = arrays[x] + arrays[x + ARRAY_SIZE];
 }
 
+void callCudaFree()
+{
+    HANDLE_ERROR(cudaFree(0));
+}
+
 void call_cuda_kernel(std::vector<double> const &arrays, std::vector<double> &result)
 {
     double *dev_array, *dev_result;
