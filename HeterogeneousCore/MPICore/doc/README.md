@@ -32,12 +32,10 @@ has to be executed.
 To build MPICore issue
 
 ```
-USER_CXXFLAGS="-I/data/cmssw/slc7_amd64_gcc700/external/openmpi/2.1.2rc4-omkpbe2/include -pthread" USER_LDFLAGS="-pthread -Wl,-rpath -Wl,/data/cmssw/slc7_amd64_gcc700/external/openmpi/2.1.2rc4-omkpbe2/lib -Wl,--enable-new-dtags -L/data/cmssw/slc7_amd64_gcc700/external/openmpi/2.1.2rc4-omkpbe2/lib -lmpi_cxx -lmpi" scram b -j
+scram b -j
 ```
 
-`USER_CXXFLAGS` and `USER_LDFLAGS` contains the libraries normally included
-using the mpiCC wrapper. They were found respectively with the commands
-`mpiCC -showme:compile` and `mpiCC -showme:link`.
+into the `src/`folder.
 
 ### Running
 
@@ -47,5 +45,5 @@ To run the module issue
 mpirun -n 1 cmsRun cpuNode.py : -n 1 cmsRun gpuNode.py
 ```
 
-into the `test` folder. This runs the two paths, both in only one instance,
+into the folder `HeterogeneousCore/MPICore/test`. This runs the two paths, both in only one instance,
 using mpirun.
