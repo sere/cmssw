@@ -55,7 +55,6 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     MPI_Get_count(&status, MPI_DOUBLE, &count);
 
     std::vector<double> recv(count);
-    assert(count == ARRAY_SIZE);
     MPI_Mrecv(static_cast<void *>(recv.data()), count, MPI_DOUBLE, &message,
               &status);
     times["offloadEnd"] = MPI_Wtime();

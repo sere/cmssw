@@ -23,12 +23,15 @@ public:
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
 private:
+    int vectorLength_;
     std::vector<double> arrays_;
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
 };
 
 ArraysProducer::ArraysProducer(const edm::ParameterSet &config)
-    : arrays_(MATR_SIZE) {
+    : vectorLength_(config.getParameter<int>("vectorLength")),
+      arrays_(vectorLength_ * 2) {
+
     std::uniform_real_distribution<double> distribution(-1000.f, 1000.f);
     std::default_random_engine generator;
     auto rand = std::bind(distribution, std::ref(generator));
@@ -55,6 +58,7 @@ void ArraysProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 void ArraysProducer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
+    desc.add<int>("vectorLength", 1);
     descriptions.add("arraysProducer", desc);
 }
 
