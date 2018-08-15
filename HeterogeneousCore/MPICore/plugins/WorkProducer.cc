@@ -31,13 +31,15 @@ private:
                    std::vector<double> &result);
     edm::EDGetTokenT<std::vector<double>> token_;
     edm::EDGetTokenT<std::map<std::string, double>> timesToken_;
+    bool runOnGPU_;
 };
 
 WorkProducer::WorkProducer(const edm::ParameterSet &config)
     : token_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("job"))),
       timesToken_(consumes<std::map<std::string, double>>(
-              config.getParameter<edm::InputTag>("times"))) {
+              config.getParameter<edm::InputTag>("times"))),
+      runOnGPU_(config.getParameter<bool>("runOnGPU")) {
 
     callCudaFree();
 
@@ -52,10 +54,12 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
-    std::vector<double> result(ARRAY_SIZE);
+    std::vector<double> result((*handle).size() / 2);
     times["algoStart"] = MPI_Wtime();
-    // call_cuda_kernel(*handle, std::ref(result));
-    addVector(*handle, std::ref(result));
+    if (runOnGPU_)
+        call_cuda_kernel(*handle, std::ref(result));
+    else
+        addVector(*handle, std::ref(result));
     times["algoEnd"] = MPI_Wtime();
 
     auto msg = std::make_unique<std::vector<double>>(result);
@@ -75,6 +79,7 @@ void WorkProducer::addVector(std::vector<double> const &arrays,
 void WorkProducer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
+    desc.add<bool>("runOnGPU", false);
     desc.add<edm::InputTag>("job", edm::InputTag());
     desc.add<edm::InputTag>("times", edm::InputTag());
     descriptions.add("workProducer", desc);

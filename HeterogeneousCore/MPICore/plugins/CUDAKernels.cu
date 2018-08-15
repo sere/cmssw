@@ -15,11 +15,11 @@ static void HandleError( cudaError_t err,
 }
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
 
-__global__ void addVector(double *arrays, double *result) {
+__global__ void addVector(double *arrays, double *result, int size) {
     int x = blockIdx.x;
 
-    if (x < ARRAY_SIZE)
-        result[x] = arrays[x] + arrays[x + ARRAY_SIZE];
+    if (x < size)
+        result[x] = arrays[x] + arrays[x + size];
 }
 
 void callCudaFree()
@@ -31,14 +31,14 @@ void call_cuda_kernel(std::vector<double> const &arrays, std::vector<double> &re
 {
     double *dev_array, *dev_result;
 
-    HANDLE_ERROR(cudaMalloc((void**)&dev_array, MATR_SIZE * sizeof(double)));
-    HANDLE_ERROR(cudaMalloc((void**)&dev_result, ARRAY_SIZE * sizeof(double)));
+    HANDLE_ERROR(cudaMalloc((void**)&dev_array, arrays.size() * sizeof(double)));
+    HANDLE_ERROR(cudaMalloc((void**)&dev_result, result.size() * sizeof(double)));
 
-    HANDLE_ERROR(cudaMemcpy(dev_array, arrays.data(), MATR_SIZE * sizeof(double), cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(dev_array, arrays.data(), arrays.size() * sizeof(double), cudaMemcpyHostToDevice));
 
-    addVector<<<ARRAY_SIZE,1>>>(dev_array, dev_result);
+    addVector<<<result.size(),1>>>(dev_array, dev_result, result.size());
 
-    HANDLE_ERROR(cudaMemcpy(result.data(), dev_result, ARRAY_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(result.data(), dev_result, result.size() * sizeof(double), cudaMemcpyDeviceToHost));
 
     cudaFree(dev_array);
     cudaFree(dev_result);

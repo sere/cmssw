@@ -38,7 +38,6 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     MPI_Mprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &message, &status);
 
     MPI_Get_count(&status, MPI_DOUBLE, &count);
-    assert(count == MATR_SIZE);
 
     std::vector<double> rec_buf(count);
     std::map<std::string, double> times;
