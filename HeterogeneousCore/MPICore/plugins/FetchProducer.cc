@@ -39,16 +39,15 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 
     MPI_Get_count(&status, MPI_DOUBLE, &count);
 
-    std::vector<double> rec_buf(count);
+    auto rec_buf = std::make_unique<std::vector<double>>(count);
     std::map<std::string, double> times;
-    MPI_Mrecv(static_cast<void *>(rec_buf.data()), count, MPI_DOUBLE, &message,
+    MPI_Mrecv(static_cast<void *>(rec_buf->data()), count, MPI_DOUBLE, &message,
               &status);
     times["jobStart"] = MPI_Wtime();
 
-    auto msg = std::make_unique<std::vector<double>>(rec_buf);
     auto timesUniquePtr =
             std::make_unique<std::map<std::string, double>>(times);
-    event.put(std::move(msg));
+    event.put(std::move(rec_buf));
     event.put(std::move(timesUniquePtr));
 }
 

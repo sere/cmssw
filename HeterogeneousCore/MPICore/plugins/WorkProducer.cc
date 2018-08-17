@@ -54,18 +54,17 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
-    std::vector<double> result((*handle).size() / 2);
+    auto result = std::make_unique<std::vector<double>>((*handle).size() / 2);
     times["algoStart"] = MPI_Wtime();
     if (runOnGPU_)
-        call_cuda_kernel(*handle, std::ref(result));
+        call_cuda_kernel(*handle, *result);
     else
-        addVector(*handle, std::ref(result));
+        addVector(*handle, *result);
     times["algoEnd"] = MPI_Wtime();
 
-    auto msg = std::make_unique<std::vector<double>>(result);
     auto timesUniquePtr =
             std::make_unique<std::map<std::string, double>>(times);
-    event.put(std::move(msg));
+    event.put(std::move(result));
     event.put(std::move(timesUniquePtr));
 }
 
