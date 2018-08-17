@@ -71,7 +71,7 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 void WorkProducer::addVector(std::vector<double> const &arrays,
                              std::vector<double> &result) {
     auto mid = arrays.begin() + arrays.size() / 2;
-    std::transform(arrays.begin(), mid - 1, mid, result.begin(),
+    std::transform(arrays.begin(), mid, mid, result.begin(),
                    std::plus<double>());
 }
 
