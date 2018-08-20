@@ -45,12 +45,12 @@ void PrintAnalyzer::analyze(edm::Event const &event,
     // for (auto time : (*timesHandle)) {
     //     edm::LogPrint("PrintAnalyzer") << time.first << " " << time.second;
     // }
-    // std::cout << "algo, job, offload, send job, send answer";
+    // std::cout << "algo, job, offload, send job, send answer, resAlloc";
 
     std::cout << times["0"] - times["1"] << ", " << times["2"] - times["3"]
               << ", " << times["offloadEnd"] - times["offloadStart"] << ", "
               << times["sendJobEnd"] - times["offloadStart"] << ", "
-              << times["4"] - times["2"] << std::endl;
+              << times["5"] - times["2"] << ", " << times["1"] - times["4"] << std::endl;
 #if DEBUG
     edm::LogPrint("PrintAnalyzer")
             << "Result array; dimension " << (*handle).size();
