@@ -27,6 +27,7 @@ private:
 
 FetchProducer::FetchProducer(const edm::ParameterSet &config) {
     produces<std::vector<double>>();
+    produces<int>();
     produces<std::map<std::string, double>>();
 }
 
@@ -54,6 +55,9 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     auto timesUniquePtr =
             std::make_unique<std::map<std::string, double>>(times);
     event.put(std::move(rec_buf));
+    std::unique_ptr<int> cpuID(new int);
+    *cpuID = status.MPI_SOURCE;
+    event.put(std::move(cpuID));
     event.put(std::move(timesUniquePtr));
 }
 

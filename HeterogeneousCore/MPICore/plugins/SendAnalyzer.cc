@@ -27,28 +27,30 @@ private:
                  edm::EventSetup const &setup) override;
 
     edm::EDGetTokenT<std::vector<double>> token_;
+    edm::EDGetTokenT<int> cpuIDToken_;
     edm::EDGetTokenT<std::map<std::string, double>> timesToken_;
 };
 
 SendAnalyzer::SendAnalyzer(const edm::ParameterSet &config)
     : token_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("result"))),
+      cpuIDToken_(consumes<int>(config.getParameter<edm::InputTag>("cpuID"))),
       timesToken_(consumes<std::map<std::string, double>>(
               config.getParameter<edm::InputTag>("times"))) {}
 
 void SendAnalyzer::analyze(edm::Event const &event,
                            edm::EventSetup const &setup) {
     edm::Handle<std::vector<double>> handle;
+    edm::Handle<int> cpuIDHandle;
     edm::Handle<std::map<std::string, double>> timesHandle;
     event.getByToken(token_, handle);
+    event.getByToken(cpuIDToken_, cpuIDHandle);
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
-    int cpu_pe = 0;
-
     times["jobEnd"] = MPI_Wtime();
     MPI_Ssend(static_cast<void const *>((*handle).data()), (*handle).size(),
-              MPI_DOUBLE, cpu_pe, WORKTAG, MPI_COMM_WORLD);
+              MPI_DOUBLE, *cpuIDHandle, WORKTAG, MPI_COMM_WORLD);
     times["sendResEnd"] = MPI_Wtime();
 
     std::vector<std::string> labels;
@@ -64,16 +66,17 @@ void SendAnalyzer::analyze(edm::Event const &event,
 #endif
     // MPI_Ssend(static_cast<void *>(labels.data()), sizeof(labels.data()),
     // MPI_CHAR,
-    //           cpu_pe, 0, MPI_COMM_WORLD);
+    //           *cpuIDHandle, 0, MPI_COMM_WORLD);
 
     MPI_Ssend(static_cast<void *>(values.data()), values.size(), MPI_DOUBLE,
-              cpu_pe, 0, MPI_COMM_WORLD);
+              *cpuIDHandle, 0, MPI_COMM_WORLD);
 }
 
 void SendAnalyzer::fillDescriptions(
         edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
     desc.add<edm::InputTag>("result", edm::InputTag());
+    desc.add<edm::InputTag>("cpuID", edm::InputTag());
     desc.add<edm::InputTag>("times", edm::InputTag());
     descriptions.add("sendAnalyzer", desc);
 }
