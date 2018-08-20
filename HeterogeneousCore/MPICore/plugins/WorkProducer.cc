@@ -54,6 +54,7 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
+    times["preAllocRes"] = MPI_Wtime();
     auto result = std::make_unique<std::vector<double>>((*handle).size() / 2);
     times["algoStart"] = MPI_Wtime();
     if (runOnGPU_)

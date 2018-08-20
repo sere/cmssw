@@ -57,6 +57,11 @@ void SendAnalyzer::analyze(edm::Event const &event,
         labels.push_back(time.first);
         values.push_back(time.second);
     }
+#if DEBUG
+    for (unsigned int i = 0; i < labels.size(); i++) {
+        std::cout << i << ": " << labels[i] << std::endl;
+    }
+#endif
     // MPI_Ssend(static_cast<void *>(labels.data()), sizeof(labels.data()),
     // MPI_CHAR,
     //           cpu_pe, 0, MPI_COMM_WORLD);
