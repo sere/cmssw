@@ -43,7 +43,7 @@ To run the module with n events and to perform the computation on gpu
 with vectors of length m issue
 
 ```
-mpirun -n 1 cmsRun cpuNode.py maxEvents=n vlen=m : -n 1 cmsRun gpuNode.py maxEvents=n runOnGPU=True
+mpirun -n 1 cmsRun cpuNode.py maxEvents=n vlen=m : -n 1 cmsRun gpuNode.py runOnGPU=True
 ```
 
 into the folder `HeterogeneousCore/MPICore/test`. This runs the two paths,

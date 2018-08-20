@@ -39,7 +39,7 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     edm::Handle<std::vector<double>> handle;
     event.getByToken(token_, handle);
 
-    int gpu_pe = 1;
+    const int gpu_pe = 1;
     std::map<std::string, double> times;
     times["offloadStart"] = MPI_Wtime();
     MPI_Ssend(static_cast<void const *>(handle.product()->data()),

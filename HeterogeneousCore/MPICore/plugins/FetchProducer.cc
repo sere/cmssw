@@ -37,6 +37,12 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 
     MPI_Mprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &message, &status);
 
+    if (status.MPI_TAG == DIETAG) {
+	MPI_Mrecv(0, 0, MPI_CHAR, &message, &status);
+        MPI_Finalize();
+        exit(0);
+    }
+
     MPI_Get_count(&status, MPI_DOUBLE, &count);
 
     auto rec_buf = std::make_unique<std::vector<double>>(count);

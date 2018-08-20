@@ -1,4 +1,6 @@
 #include <iostream>
+#include <mpi.h>
+#include "constants.h"
 
 #include "FWCore/Framework/interface/stream/EDAnalyzer.h"
 
@@ -14,11 +16,15 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-class PrintAnalyzer : public edm::stream::EDAnalyzer<> {
+class PrintAnalyzer : public edm::stream::EDAnalyzer<edm::GlobalCache<void>> {
 public:
     explicit PrintAnalyzer(const edm::ParameterSet &config);
+    static std::shared_ptr<void> initializeGlobalCache(edm::ParameterSet const&) {
+    return std::shared_ptr<void>();
+}
     ~PrintAnalyzer() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
+    static void globalEndJob(void const*);
 
 private:
     void analyze(edm::Event const &event,
@@ -32,7 +38,9 @@ PrintAnalyzer::PrintAnalyzer(const edm::ParameterSet &config)
     : token_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("result"))),
       timesToken_(consumes<std::map<std::string, double>>(
-              config.getParameter<edm::InputTag>("times"))) {}
+              config.getParameter<edm::InputTag>("times"))) {
+
+}
 
 void PrintAnalyzer::analyze(edm::Event const &event,
                             edm::EventSetup const &setup) {
@@ -58,6 +66,11 @@ void PrintAnalyzer::analyze(edm::Event const &event,
         edm::LogPrint("PrintAnalyzer") << (*handle)[i];
     }
 #endif
+}
+
+void PrintAnalyzer::globalEndJob(void const* Void) {
+    const int gpu_pe = 1;
+    MPI_Ssend(0, 0, MPI_CHAR, gpu_pe, DIETAG, MPI_COMM_WORLD);
 }
 
 void PrintAnalyzer::fillDescriptions(
