@@ -1,6 +1,6 @@
+#include "constants.h"
 #include <iostream>
 #include <mpi.h>
-#include "constants.h"
 
 #include "FWCore/Framework/interface/stream/EDAnalyzer.h"
 
@@ -19,12 +19,13 @@
 class PrintAnalyzer : public edm::stream::EDAnalyzer<edm::GlobalCache<void>> {
 public:
     explicit PrintAnalyzer(const edm::ParameterSet &config);
-    static std::shared_ptr<void> initializeGlobalCache(edm::ParameterSet const&) {
-    return std::shared_ptr<void>();
-}
+    static std::shared_ptr<void>
+    initializeGlobalCache(edm::ParameterSet const &) {
+        return std::shared_ptr<void>();
+    }
     ~PrintAnalyzer() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
-    static void globalEndJob(void const*);
+    static void globalEndJob(void const *);
 
 private:
     void analyze(edm::Event const &event,
@@ -38,9 +39,7 @@ PrintAnalyzer::PrintAnalyzer(const edm::ParameterSet &config)
     : token_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("result"))),
       timesToken_(consumes<std::map<std::string, double>>(
-              config.getParameter<edm::InputTag>("times"))) {
-
-}
+              config.getParameter<edm::InputTag>("times"))) {}
 
 void PrintAnalyzer::analyze(edm::Event const &event,
                             edm::EventSetup const &setup) {
@@ -58,7 +57,8 @@ void PrintAnalyzer::analyze(edm::Event const &event,
     std::cout << times["0"] - times["1"] << ", " << times["2"] - times["3"]
               << ", " << times["offloadEnd"] - times["offloadStart"] << ", "
               << times["sendJobEnd"] - times["offloadStart"] << ", "
-              << times["5"] - times["2"] << ", " << times["1"] - times["4"] << std::endl;
+              << times["5"] - times["2"] << ", " << times["1"] - times["4"]
+              << std::endl;
 #if DEBUG
     edm::LogPrint("PrintAnalyzer")
             << "Result array; dimension " << (*handle).size();
