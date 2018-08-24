@@ -22,27 +22,41 @@ public:
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
 private:
+    void beginStream(edm::StreamID sid);
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
+
+    unsigned int sid_;
 };
 
 FetchProducer::FetchProducer(const edm::ParameterSet &config) {
     produces<std::vector<double>>();
     produces<int>();
+    produces<int>("mpiTag");
     produces<std::map<std::string, double>>();
 }
+
+void FetchProducer::beginStream(edm::StreamID sid) { sid_ = sid; }
 
 void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     MPI_Message message;
     MPI_Status status;
     int count;
 
+#if DEBUG
+    edm::LogPrint("FetchProducer")
+            << "stream " << sid_ << " probing on ANY_TAG ";
+#endif
     MPI_Mprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &message, &status);
+#if DEBUG
+    edm::LogPrint("FetchProducer")
+            << "stream " << sid_ << " probed tag " << status.MPI_TAG;
+#endif
 
-    if (status.MPI_TAG == DIETAG) {
-        MPI_Mrecv(0, 0, MPI_CHAR, &message, &status);
-        MPI_Finalize();
-        exit(0);
-    }
+    //    if (status.MPI_TAG == DIETAG) {
+    //        MPI_Mrecv(0, 0, MPI_CHAR, &message, &status);
+    //        MPI_Finalize();
+    //        exit(0);
+    //    }
 
     MPI_Get_count(&status, MPI_DOUBLE, &count);
 
@@ -50,6 +64,10 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     std::map<std::string, double> times;
     MPI_Mrecv(static_cast<void *>(rec_buf->data()), count, MPI_DOUBLE, &message,
               &status);
+#if DEBUG
+    edm::LogPrint("FetchProducer")
+            << "stream " << sid_ << " received with tag " << status.MPI_TAG;
+#endif
     times["jobStart"] = MPI_Wtime();
 
     auto timesUniquePtr =
@@ -58,6 +76,9 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     std::unique_ptr<int> cpuID(new int);
     *cpuID = status.MPI_SOURCE;
     event.put(std::move(cpuID));
+    std::unique_ptr<int> mpiTag(new int);
+    *mpiTag = status.MPI_TAG;
+    event.put(std::move(mpiTag), "mpiTag");
     event.put(std::move(timesUniquePtr));
 }
 
