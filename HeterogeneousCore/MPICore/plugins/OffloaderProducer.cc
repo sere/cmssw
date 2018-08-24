@@ -22,9 +22,11 @@ public:
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
 private:
+    void beginStream(edm::StreamID sid);
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
 
     edm::EDGetTokenT<std::vector<double>> token_;
+    unsigned int sid_;
 };
 
 OffloadProducer::OffloadProducer(const edm::ParameterSet &config)
@@ -35,20 +37,45 @@ OffloadProducer::OffloadProducer(const edm::ParameterSet &config)
     produces<std::map<std::string, double>>();
 }
 
+void OffloadProducer::beginStream(edm::StreamID sid) { sid_ = sid; }
+
 void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     edm::Handle<std::vector<double>> handle;
     event.getByToken(token_, handle);
 
+    int mpiRank, mpiID;
+    MPI_Comm_size(MPI_COMM_WORLD, &mpiRank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpiID);
+
+    MPI_Group world_group, cpu_group;
+    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+    const int ranks[] = {0};
+    MPI_Group_excl(world_group, 1, ranks, &cpu_group);
+    MPI_Comm CPU_comm;
+    MPI_Comm_create_group(MPI_COMM_WORLD, cpu_group, 0, &CPU_comm);
+
     std::map<std::string, double> times;
     times["offloadStart"] = MPI_Wtime();
+#if DEBUG
+    edm::LogPrint("OffloaderProducer")
+            << "id: " << mpiID << " sending work with tag " << WORKTAG + mpiID;
+#endif
     MPI_Ssend(static_cast<void const *>(handle.product()->data()),
-              handle.product()->size(), MPI_DOUBLE, gpu_pe, WORKTAG,
+              handle.product()->size(), MPI_DOUBLE, gpu_pe, WORKTAG + mpiID,
               MPI_COMM_WORLD);
+#if DEBUG
+    edm::LogPrint("OffloaderProducer")
+            << "id: " << mpiID << " sent work with tag " << WORKTAG + mpiID;
+#endif
     times["sendJobEnd"] = MPI_Wtime();
 
     MPI_Message message;
     MPI_Status status;
-    MPI_Mprobe(gpu_pe, WORKTAG, MPI_COMM_WORLD, &message, &status);
+#if DEBUG
+    edm::LogPrint("OffloaderProducer")
+            << "id: " << mpiID << " probing with tag " << WORKTAG + mpiID;
+#endif
+    MPI_Mprobe(gpu_pe, WORKTAG + mpiID, MPI_COMM_WORLD, &message, &status);
 
     int count;
     MPI_Get_count(&status, MPI_DOUBLE, &count);
@@ -56,6 +83,10 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     std::vector<double> recv(count);
     MPI_Mrecv(static_cast<void *>(recv.data()), count, MPI_DOUBLE, &message,
               &status);
+#if DEBUG
+    edm::LogPrint("OffloaderProducer")
+            << "id: " << mpiID << " received with tag " << WORKTAG + mpiID;
+#endif
     times["offloadEnd"] = MPI_Wtime();
 
     // MPI_Mprobe(gpu_pe, 0, MPI_COMM_WORLD, &message, &status);
@@ -64,7 +95,7 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     // MPI_Mrecv(static_cast<void *>(labels.data()), count, MPI_CHAR, &message,
     //           &status);
 
-    MPI_Mprobe(gpu_pe, 0, MPI_COMM_WORLD, &message, &status);
+    MPI_Mprobe(gpu_pe, mpiID, MPI_COMM_WORLD, &message, &status);
     MPI_Get_count(&status, MPI_DOUBLE, &count);
     std::vector<double> values(count);
     MPI_Mrecv(static_cast<void *>(values.data()), count, MPI_DOUBLE, &message,

@@ -7,6 +7,11 @@ options.register('runOnGPU',
 		 VarParsing.multiplicity.singleton,
 		 VarParsing.varType.bool,
 		 'If true the vector sum will be executed on the GPU')
+options.register('streams',
+                 1,
+		 VarParsing.multiplicity.singleton,
+		 VarParsing.varType.int,
+		 'Number of streams to execute')
 options.parseArguments()
 
 process = cms.Process("TEST")
@@ -25,6 +30,7 @@ process.work = cms.EDProducer("WorkProducer",
 process.send = cms.EDAnalyzer("SendAnalyzer",
     result = cms.InputTag("work"),
     cpuID = cms.InputTag("work"),
+    mpiTag = cms.InputTag("fetch", "mpiTag"),
     times = cms.InputTag("work")
 )
 
@@ -34,3 +40,6 @@ process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32( options.maxEvents )
 )
 
+process.options = cms.untracked.PSet(
+    numberOfStreams = cms.untracked.uint32( options.streams )
+)

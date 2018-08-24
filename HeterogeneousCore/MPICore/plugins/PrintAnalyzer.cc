@@ -48,6 +48,18 @@ void PrintAnalyzer::analyze(edm::Event const &event,
     event.getByToken(token_, handle);
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
+    int mpiRank, mpiID;
+    MPI_Comm_size(MPI_COMM_WORLD, &mpiRank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpiID);
+
+    MPI_Group world_group, cpu_group;
+    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+    const int ranks[] = {0};
+    MPI_Group_excl(world_group, 1, ranks, &cpu_group);
+    MPI_Comm CPU_comm;
+    MPI_Comm_create_group(MPI_COMM_WORLD, cpu_group, 0, &CPU_comm);
+
+    MPI_Barrier(CPU_comm);
 
     // for (auto time : (*timesHandle)) {
     //     edm::LogPrint("PrintAnalyzer") << time.first << " " << time.second;
@@ -69,22 +81,22 @@ void PrintAnalyzer::analyze(edm::Event const &event,
 }
 
 void PrintAnalyzer::globalEndJob(void const *Void) {
-    int mpiRank, mpiID;
-    MPI_Comm_size(MPI_COMM_WORLD, &mpiRank);
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpiID);
-
-    MPI_Group world_group, cpu_group;
-    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
-    const int ranks[] = {0};
-    MPI_Group_excl(world_group, 1, ranks, &cpu_group);
-    MPI_Comm CPU_comm;
-    MPI_Comm_create_group(MPI_COMM_WORLD, cpu_group, 0, &CPU_comm);
-
-    MPI_Barrier(CPU_comm);
-
-    if (mpiID == mpiRank - 1) {
-        MPI_Send(0, 0, MPI_CHAR, gpu_pe, DIETAG, MPI_COMM_WORLD);
-    }
+    //    int mpiRank, mpiID;
+    //    MPI_Comm_size(MPI_COMM_WORLD, &mpiRank);
+    //    MPI_Comm_rank(MPI_COMM_WORLD, &mpiID);
+    //
+    //    MPI_Group world_group, cpu_group;
+    //    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+    //    const int ranks[] = {0};
+    //    MPI_Group_excl(world_group, 1, ranks, &cpu_group);
+    //    MPI_Comm CPU_comm;
+    //    MPI_Comm_create_group(MPI_COMM_WORLD, cpu_group, 0, &CPU_comm);
+    //
+    //    MPI_Barrier(CPU_comm);
+    //
+    //    if (mpiID == mpiRank - 1) {
+    //        MPI_Ssend(0, 0, MPI_CHAR, gpu_pe, DIETAG, MPI_COMM_WORLD);
+    //    }
 }
 
 void PrintAnalyzer::fillDescriptions(

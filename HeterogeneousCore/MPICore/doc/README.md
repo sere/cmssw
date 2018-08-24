@@ -40,10 +40,10 @@ into the `src/`folder.
 ### Running
 
 To run the module with n events on N nodes and to perform the computation on gpu
-with vectors of length m issue
+with M streams and vectors of length m issue
 
 ```
-mpirun -n 1 cmsRun test/gpuNode.py runOnGPU=True : -n N cmsRun test/cpuNode.py vlen=1e2 maxEvents=n
+mpirun -n 1 cmsRun test/gpuNode.py runOnGPU=True streams=M : -n N cmsRun test/cpuNode.py vlen=1e2 maxEvents=n
 ```
 
 into the folder `HeterogeneousCore/MPICore/test`. This runs the two paths,
