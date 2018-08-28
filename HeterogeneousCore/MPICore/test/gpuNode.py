@@ -18,6 +18,8 @@ process = cms.Process("TEST")
 
 process.source = cms.Source("EmptySource")
 
+process.MPIService = cms.Service("MPIService")
+
 process.fetch = cms.EDProducer("FetchProducer")
 
 process.work = cms.EDProducer("WorkProducer",
