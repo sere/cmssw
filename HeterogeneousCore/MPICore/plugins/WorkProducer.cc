@@ -43,7 +43,9 @@ WorkProducer::WorkProducer(const edm::ParameterSet &config)
               config.getParameter<edm::InputTag>("times"))),
       runOnGPU_(config.getParameter<bool>("runOnGPU")) {
 
-    callCudaFree();
+    if (runOnGPU_) {
+      callCudaFree();
+    }
 
     produces<std::vector<double>>();
     produces<int>();
