@@ -13,6 +13,8 @@ process = cms.Process("TEST")
 
 process.source = cms.Source("EmptySource")
 
+process.MPIService = cms.Service("MPIService")
+
 process.produce = cms.EDProducer("ArraysProducer",
     vectorLength = cms.int32(int(options.vlen))
 )
