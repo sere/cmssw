@@ -22,11 +22,10 @@ public:
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
 private:
-    void beginStream(edm::StreamID sid);
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
 
     edm::EDGetTokenT<std::vector<double>> token_;
-    unsigned int sid_;
+    unsigned int eventNr_ = 0;
 };
 
 OffloadProducer::OffloadProducer(const edm::ParameterSet &config)
@@ -36,8 +35,6 @@ OffloadProducer::OffloadProducer(const edm::ParameterSet &config)
     produces<std::vector<double>>();
     produces<std::map<std::string, double>>();
 }
-
-void OffloadProducer::beginStream(edm::StreamID sid) { sid_ = sid; }
 
 void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     edm::Handle<std::vector<double>> handle;
@@ -55,6 +52,8 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     MPI_Comm_create_group(MPI_COMM_WORLD, cpu_group, 0, &CPU_comm);
 
     std::map<std::string, double> times;
+
+    times["eventNr"] = ++eventNr_;
     times["offloadStart"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("OffloaderProducer")
