@@ -2,6 +2,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <vector>
+#include <cmath>
 
 #include <cstdio>
 static void HandleError(cudaError_t err, const char *file, int line) {
@@ -19,6 +20,13 @@ __global__ void addVector(double *arrays, double *result, int size) {
         result[x] = arrays[x] + arrays[x + size];
 }
 
+__global__ void elementwiseDistance(double *arrays, double *result, int size) {
+    int x = blockIdx.x;
+
+    if (x < size)
+        result[x] = std::sqrt(arrays[x] * arrays[x] + arrays[x + size] * arrays[x + size]);
+}
+
 void callCudaFree() { HANDLE_ERROR(cudaFree(0)); }
 
 void allocate_buffers(double *&dev_array, double *&dev_result) {
@@ -33,7 +41,7 @@ void call_cuda_kernel(std::vector<double> const &arrays,
     HANDLE_ERROR(cudaMemcpy(dev_array, arrays.data(),
                             arrays.size() * sizeof(double), cudaMemcpyDefault));
 
-    addVector<<<result.size(), 1>>>(dev_array, dev_result, result.size());
+    elementwiseDistance<<<result.size(), 1>>>(dev_array, dev_result, result.size());
 
     HANDLE_ERROR(cudaMemcpy(result.data(), dev_result,
                             result.size() * sizeof(double),

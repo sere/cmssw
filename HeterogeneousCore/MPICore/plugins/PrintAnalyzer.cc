@@ -66,8 +66,9 @@ void PrintAnalyzer::analyze(edm::Event const &event,
     // }
     // std::cout << "algo, job, offload, send job, send answer, resAlloc";
 
-    std::cout << times["eventNr"] << ", " << times["0"] - times["1"] << ", " << times["2"] - times["3"]
-              << ", " << times["offloadEnd"] - times["offloadStart"] << ", "
+    std::cout << times["eventNr"] << ", " << times["0"] - times["1"] << ", "
+              << times["2"] - times["3"] << ", "
+              << times["offloadEnd"] - times["offloadStart"] << ", "
               << times["sendJobEnd"] - times["offloadStart"] << ", "
               << times["5"] - times["2"] << ", " << times["1"] - times["4"]
               << std::endl;

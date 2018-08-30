@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include <mpi.h>
 #include <unistd.h>
 
@@ -32,6 +33,8 @@ private:
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
     void addVector(std::vector<double> const &arrays,
                    std::vector<double> &result);
+    void elementwiseDistance(std::vector<double> const &arrays,
+                             std::vector<double> &result);
     edm::EDGetTokenT<std::vector<double>> token_;
     edm::EDGetTokenT<int> cpuIDToken_;
     edm::EDGetTokenT<std::map<std::string, double>> timesToken_;
@@ -74,7 +77,7 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     if (runOnGPU_)
         call_cuda_kernel(*handle, *result, dev_array_, dev_result_);
     else
-        addVector(*handle, *result);
+        elementwiseDistance(*handle, *result);
     times["algoEnd"] = MPI_Wtime();
 
     auto timesUniquePtr =
@@ -88,9 +91,21 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 
 void WorkProducer::addVector(std::vector<double> const &arrays,
                              std::vector<double> &result) {
-    auto mid = arrays.begin() + arrays.size() / 2;
-    std::transform(arrays.begin(), mid, mid, result.begin(),
-                   std::plus<double>());
+    // auto mid = arrays.begin() + arrays.size() / 2;
+    // std::transform(arrays.begin(), mid, mid, result.begin(),
+    //                std::plus<double>());
+    for (unsigned int i = 0; i < result.size(); i++) {
+        result[i] = arrays[i] + arrays[i + result.size()];
+    }
+}
+
+void WorkProducer::elementwiseDistance(std::vector<double> const &arrays,
+                                       std::vector<double> &result) {
+    for (unsigned int i = 0; i < result.size(); i++) {
+        result[i] = std::sqrt(arrays[i] * arrays[i] +
+                              arrays[i + result.size()] *
+                                      arrays[i + result.size()]);
+    }
 }
 
 void WorkProducer::fillDescriptions(
