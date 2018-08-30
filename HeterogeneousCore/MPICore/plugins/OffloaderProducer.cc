@@ -1,19 +1,17 @@
 #include <iostream>
 #include <mpi.h>
 
-#include "constants.h"
-
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-
-// Configuration
-#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
-#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
-
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
+
+#include "WrapperHandle.h"
+#include "constants.h"
+#include "serialization.h"
 
 class OffloadProducer : public edm::stream::EDProducer<> {
 public:
@@ -26,6 +24,7 @@ private:
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
 
     edm::EDGetTokenT<std::vector<double>> token_;
+    edm::EDPutTokenT<std::vector<double>> product_;
     unsigned int sid_;
 };
 
@@ -33,14 +32,14 @@ OffloadProducer::OffloadProducer(const edm::ParameterSet &config)
     : token_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("arrays"))) {
 
-    produces<std::vector<double>>();
+    product_ = produces<std::vector<double>>();
     produces<std::map<std::string, double>>();
 }
 
 void OffloadProducer::beginStream(edm::StreamID sid) { sid_ = sid; }
 
 void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
-    edm::Handle<std::vector<double>> handle;
+    edm::Handle<edm::WrapperBase> handle("std::vector<double>");
     event.getByToken(token_, handle);
 
     int mpiRank, mpiID;
@@ -60,8 +59,9 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     edm::LogPrint("OffloaderProducer")
             << "id: " << mpiID << " sending work with tag " << WORKTAG + mpiID;
 #endif
-    MPI_Ssend(static_cast<void const *>(handle.product()->data()),
-              handle.product()->size(), MPI_DOUBLE, gpu_pe, WORKTAG + mpiID,
+    auto buffer = serialize(*handle);
+    MPI_Ssend(buffer.first.get(), buffer.second, 
+              MPI_CHAR, gpu_pe, WORKTAG + mpiID,
               MPI_COMM_WORLD);
 #if DEBUG
     edm::LogPrint("OffloaderProducer")
@@ -77,24 +77,18 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 #endif
     MPI_Mprobe(gpu_pe, WORKTAG + mpiID, MPI_COMM_WORLD, &message, &status);
 
-    int count;
-    MPI_Get_count(&status, MPI_DOUBLE, &count);
-
-    std::vector<double> recv(count);
-    MPI_Mrecv(static_cast<void *>(recv.data()), count, MPI_DOUBLE, &message,
-              &status);
+    int size;
+    MPI_Get_count(&status, MPI_CHAR, &size);
+    auto recv = std::make_unique<char[]>(size);
+    MPI_Mrecv(recv.get(), size, MPI_CHAR, &message, &status);
+    auto product = deserialize(recv.get(), size);
 #if DEBUG
     edm::LogPrint("OffloaderProducer")
             << "id: " << mpiID << " received with tag " << WORKTAG + mpiID;
 #endif
     times["offloadEnd"] = MPI_Wtime();
 
-    // MPI_Mprobe(gpu_pe, 0, MPI_COMM_WORLD, &message, &status);
-    // MPI_Get_count(&status, MPI_CHAR, &count);
-    // std::vector<std::string> labels(count);
-    // MPI_Mrecv(static_cast<void *>(labels.data()), count, MPI_CHAR, &message,
-    //           &status);
-
+    int count;
     MPI_Mprobe(gpu_pe, mpiID, MPI_COMM_WORLD, &message, &status);
     MPI_Get_count(&status, MPI_DOUBLE, &count);
     std::vector<double> values(count);
@@ -104,10 +98,8 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     for (unsigned int i = 0; i < values.size(); i++) {
         times[std::to_string(i)] = values[i];
     }
-    auto msg = std::make_unique<std::vector<double>>(recv);
-    auto timesUniquePtr =
-            std::make_unique<std::map<std::string, double>>(times);
-    event.put(std::move(msg));
+    auto timesUniquePtr = std::make_unique<std::map<std::string, double>>(times);
+    event.put(product_, std::move(product));
     event.put(std::move(timesUniquePtr));
 }
 
@@ -118,4 +110,5 @@ void OffloadProducer::fillDescriptions(
     descriptions.add("offloadProducer", desc);
 }
 
+#include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(OffloadProducer);
