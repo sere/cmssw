@@ -1,3 +1,4 @@
+#include <cassert>
 #include <mpi.h>
 #include <unistd.h>
 
@@ -16,8 +17,10 @@
 #include "FWCore/Utilities/interface/StreamID.h"
 
 void call_cuda_kernel(std::vector<double> const &arrays,
-                      std::vector<double> &result);
+                      std::vector<double> &result, double *dev_array,
+                      double *dev_result);
 void callCudaFree();
+void allocate_buffers(double *&dev_array, double *&dev_result);
 
 class WorkProducer : public edm::stream::EDProducer<> {
 public:
@@ -32,6 +35,7 @@ private:
     edm::EDGetTokenT<std::vector<double>> token_;
     edm::EDGetTokenT<int> cpuIDToken_;
     edm::EDGetTokenT<std::map<std::string, double>> timesToken_;
+    double *dev_array_, *dev_result_;
     bool runOnGPU_;
 };
 
@@ -44,7 +48,8 @@ WorkProducer::WorkProducer(const edm::ParameterSet &config)
       runOnGPU_(config.getParameter<bool>("runOnGPU")) {
 
     if (runOnGPU_) {
-      callCudaFree();
+        callCudaFree();
+        allocate_buffers(dev_array_, dev_result_);
     }
 
     produces<std::vector<double>>();
@@ -61,11 +66,13 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
+    assert(handle.product()->size() <= MAX_ARRAY_SIZE * 2);
+
     times["preAllocRes"] = MPI_Wtime();
     auto result = std::make_unique<std::vector<double>>((*handle).size() / 2);
     times["algoStart"] = MPI_Wtime();
     if (runOnGPU_)
-        call_cuda_kernel(*handle, *result);
+        call_cuda_kernel(*handle, *result, dev_array_, dev_result_);
     else
         addVector(*handle, *result);
     times["algoEnd"] = MPI_Wtime();
