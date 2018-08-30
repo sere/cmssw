@@ -1,19 +1,18 @@
 #include <mpi.h>
 #include <unistd.h>
 
-#include "constants.h"
-
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-
-// Configuration
-#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
-#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
-
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/StreamID.h"
+
+#include "WrapperHandle.h"
+#include "constants.h"
+#include "serialization.h"
 
 class FetchProducer : public edm::stream::EDProducer<> {
 public:
@@ -24,12 +23,12 @@ public:
 private:
     void beginStream(edm::StreamID sid);
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
-
+    edm::EDPutToken token_;
     unsigned int sid_;
 };
 
 FetchProducer::FetchProducer(const edm::ParameterSet &config) {
-    produces<std::vector<double>>();
+    token_ = produces<std::vector<double>>();
     produces<int>();
     produces<int>("mpiTag");
     produces<std::map<std::string, double>>();
@@ -40,7 +39,7 @@ void FetchProducer::beginStream(edm::StreamID sid) { sid_ = sid; }
 void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     MPI_Message message;
     MPI_Status status;
-    int count;
+    int size;
 
 #if DEBUG
     edm::LogPrint("FetchProducer")
@@ -58,12 +57,11 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     //        exit(0);
     //    }
 
-    MPI_Get_count(&status, MPI_DOUBLE, &count);
+    MPI_Get_count(&status, MPI_CHAR, &size);
 
-    auto rec_buf = std::make_unique<std::vector<double>>(count);
+    auto rec_buf = std::make_unique<char[]>(size);
     std::map<std::string, double> times;
-    MPI_Mrecv(static_cast<void *>(rec_buf->data()), count, MPI_DOUBLE, &message,
-              &status);
+    MPI_Mrecv(rec_buf.get(), size, MPI_CHAR, &message, &status);
 #if DEBUG
     edm::LogPrint("FetchProducer")
             << "stream " << sid_ << " received with tag " << status.MPI_TAG;
@@ -72,7 +70,8 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 
     auto timesUniquePtr =
             std::make_unique<std::map<std::string, double>>(times);
-    event.put(std::move(rec_buf));
+    auto product = deserialize(rec_buf.get(), size);
+    event.put(token_, std::move(product));
     std::unique_ptr<int> cpuID(new int);
     *cpuID = status.MPI_SOURCE;
     event.put(std::move(cpuID));

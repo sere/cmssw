@@ -1,20 +1,18 @@
-#include "constants.h"
 #include <iostream>
 #include <mpi.h>
-
-#include "FWCore/Framework/interface/stream/EDAnalyzer.h"
-
-// Configuration
-#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
-#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
-
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/stream/EDAnalyzer.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
+
+#include "WrapperHandle.h"
+#include "constants.h"
+#include "serialization.h"
 
 class SendAnalyzer : public edm::stream::EDAnalyzer<> {
 public:
@@ -46,10 +44,11 @@ void SendAnalyzer::beginStream(edm::StreamID sid) { sid_ = sid; }
 
 void SendAnalyzer::analyze(edm::Event const &event,
                            edm::EventSetup const &setup) {
-    edm::Handle<std::vector<double>> handle;
+    edm::Handle<edm::WrapperBase> handle("std::vector<double>");
     edm::Handle<int> cpuIDHandle, mpiTagHandle;
     edm::Handle<std::map<std::string, double>> timesHandle;
     event.getByToken(token_, handle);
+    auto buffer = serialize(*handle);
     event.getByToken(cpuIDToken_, cpuIDHandle);
     event.getByToken(mpiTagToken_, mpiTagHandle);
     event.getByToken(timesToken_, timesHandle);
@@ -61,8 +60,8 @@ void SendAnalyzer::analyze(edm::Event const &event,
             << "send sends tag " << *mpiTagHandle << ", stream " << sid_
             << " and cpuid " << *cpuIDHandle;
 #endif
-    MPI_Ssend(static_cast<void const *>(handle.product()->data()),
-              handle.product()->size(), MPI_DOUBLE, *cpuIDHandle, *mpiTagHandle,
+    MPI_Ssend(buffer.first.get(), buffer.second,
+              MPI_CHAR, *cpuIDHandle, *mpiTagHandle,
               MPI_COMM_WORLD);
 #if DEBUG
     edm::LogPrint("SendAnalyzer")
@@ -107,4 +106,5 @@ void SendAnalyzer::fillDescriptions(
     descriptions.add("sendAnalyzer", desc);
 }
 
+#include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(SendAnalyzer);
