@@ -33,7 +33,8 @@ ArraysProducer::ArraysProducer(const edm::ParameterSet &config)
       arrays_(vectorLength_ * 2) {
 
     std::uniform_real_distribution<double> distribution(-1000.f, 1000.f);
-    std::default_random_engine generator;
+    std::random_device dev;
+    std::default_random_engine generator{dev()};
     auto rand = std::bind(distribution, std::ref(generator));
     std::generate(arrays_.begin(), arrays_.end(), rand);
 
