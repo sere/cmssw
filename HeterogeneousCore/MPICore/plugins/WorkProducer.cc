@@ -35,14 +35,14 @@ private:
                    std::vector<double> &result);
     void elementwiseDistance(std::vector<double> const &arrays,
                              std::vector<double> &result);
-    edm::EDGetTokenT<std::vector<double>> token_;
+    edm::EDGetTokenT<std::vector<double>> vectorToken_;
     edm::EDGetTokenT<std::map<std::string, double>> timesToken_;
     double *dev_array_, *dev_result_;
     bool runOnGPU_;
 };
 
 WorkProducer::WorkProducer(const edm::ParameterSet &config)
-    : token_(consumes<std::vector<double>>(
+    : vectorToken_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("job"))),
       timesToken_(consumes<std::map<std::string, double>>(
               config.getParameter<edm::InputTag>("times"))),
@@ -59,21 +59,21 @@ WorkProducer::WorkProducer(const edm::ParameterSet &config)
 }
 
 void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
-    edm::Handle<std::vector<double>> handle;
+    edm::Handle<std::vector<double>> vectorHandle;
     edm::Handle<std::map<std::string, double>> timesHandle;
-    event.getByToken(token_, handle);
+    event.getByToken(vectorToken_, vectorHandle);
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
-    assert(handle.product()->size() <= MAX_ARRAY_SIZE * 2);
+    assert(vectorHandle.product()->size() <= MAX_ARRAY_SIZE * 2);
 
     times["preAllocRes"] = MPI_Wtime();
-    auto result = std::make_unique<std::vector<double>>((*handle).size() / 2);
+    auto result = std::make_unique<std::vector<double>>((*vectorHandle).size() / 2);
     times["algoStart"] = MPI_Wtime();
     if (runOnGPU_)
-        call_cuda_kernel(*handle, *result, dev_array_, dev_result_);
+        call_cuda_kernel(*vectorHandle, *result, dev_array_, dev_result_);
     else
-        elementwiseDistance(*handle, *result);
+        elementwiseDistance(*vectorHandle, *result);
     times["algoEnd"] = MPI_Wtime();
 
     auto timesUniquePtr =

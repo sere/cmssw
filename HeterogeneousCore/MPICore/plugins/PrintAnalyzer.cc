@@ -31,21 +31,21 @@ private:
     void analyze(edm::Event const &event,
                  edm::EventSetup const &setup) override;
 
-    edm::EDGetTokenT<std::vector<double>> token_;
+    edm::EDGetTokenT<std::vector<double>> vectorToken_;
     edm::EDGetTokenT<std::map<std::string, double>> timesToken_;
 };
 
 PrintAnalyzer::PrintAnalyzer(const edm::ParameterSet &config)
-    : token_(consumes<std::vector<double>>(
+    : vectorToken_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("result"))),
       timesToken_(consumes<std::map<std::string, double>>(
               config.getParameter<edm::InputTag>("times"))) {}
 
 void PrintAnalyzer::analyze(edm::Event const &event,
                             edm::EventSetup const &setup) {
-    edm::Handle<std::vector<double>> handle;
+    edm::Handle<std::vector<double>> vectorHandle;
     edm::Handle<std::map<std::string, double>> timesHandle;
-    event.getByToken(token_, handle);
+    event.getByToken(vectorToken_, vectorHandle);
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
@@ -62,9 +62,9 @@ void PrintAnalyzer::analyze(edm::Event const &event,
               << std::endl;
 #if DEBUG
     edm::LogPrint("PrintAnalyzer")
-            << "Result array; dimension " << (*handle).size();
-    for (int i = 0; i < std::min(10, (int)(*handle).size()); i++) {
-        edm::LogPrint("PrintAnalyzer") << (*handle)[i];
+            << "Result array; dimension " << (*vectorHandle).size();
+    for (int i = 0; i < std::min(10, (int)(*vectorHandle).size()); i++) {
+        edm::LogPrint("PrintAnalyzer") << (*vectorHandle)[i];
     }
 #endif
 }

@@ -23,12 +23,12 @@ public:
 private:
     void beginStream(edm::StreamID sid);
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
-    edm::EDPutToken token_;
+    edm::EDPutToken vectorToken_;
     unsigned int sid_;
 };
 
 FetchProducer::FetchProducer(const edm::ParameterSet &config) {
-    token_ = produces<std::vector<double>>();
+    vectorToken_ = produces<std::vector<double>>();
     produces<int>();
     produces<int>("mpiTag");
     produces<std::map<std::string, double>>();
@@ -71,7 +71,7 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     auto timesUniquePtr =
             std::make_unique<std::map<std::string, double>>(times);
     auto product = deserialize(rec_buf.get(), size);
-    event.put(token_, std::move(product));
+    event.put(vectorToken_, std::move(product));
     std::unique_ptr<int> offloaderID(new int);
     *offloaderID = status.MPI_SOURCE;
     event.put(std::move(offloaderID));

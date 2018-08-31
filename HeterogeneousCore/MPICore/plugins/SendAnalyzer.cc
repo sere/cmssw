@@ -26,14 +26,14 @@ private:
                  edm::EventSetup const &setup) override;
 
     unsigned int sid_;
-    edm::EDGetTokenT<std::vector<double>> token_;
+    edm::EDGetTokenT<std::vector<double>> vectorToken_;
     edm::EDGetTokenT<int> offloaderIDToken_;
     edm::EDGetTokenT<int> mpiTagToken_;
     edm::EDGetTokenT<std::map<std::string, double>> timesToken_;
 };
 
 SendAnalyzer::SendAnalyzer(const edm::ParameterSet &config)
-    : token_(consumes<std::vector<double>>(
+    : vectorToken_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("result"))),
       offloaderIDToken_(consumes<int>(config.getParameter<edm::InputTag>("offloaderID"))),
       mpiTagToken_(consumes<int>(config.getParameter<edm::InputTag>("mpiTag"))),
@@ -44,11 +44,11 @@ void SendAnalyzer::beginStream(edm::StreamID sid) { sid_ = sid; }
 
 void SendAnalyzer::analyze(edm::Event const &event,
                            edm::EventSetup const &setup) {
-    edm::Handle<edm::WrapperBase> handle("std::vector<double>");
+    edm::Handle<edm::WrapperBase> vectorHandle("std::vector<double>");
     edm::Handle<int> offloaderIDHandle, mpiTagHandle;
     edm::Handle<std::map<std::string, double>> timesHandle;
-    event.getByToken(token_, handle);
-    auto buffer = serialize(*handle);
+    event.getByToken(vectorToken_, vectorHandle);
+    auto buffer = serialize(*vectorHandle);
     event.getByToken(offloaderIDToken_, offloaderIDHandle);
     event.getByToken(mpiTagToken_, mpiTagHandle);
     event.getByToken(timesToken_, timesHandle);

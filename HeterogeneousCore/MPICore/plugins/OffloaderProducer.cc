@@ -23,12 +23,12 @@ private:
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
 
     unsigned int eventNr_ = 0;
-    edm::EDGetTokenT<std::vector<double>> token_;
+    edm::EDGetTokenT<std::vector<double>> vectorToken_;
     edm::EDPutTokenT<std::vector<double>> product_;
 };
 
 OffloadProducer::OffloadProducer(const edm::ParameterSet &config)
-    : token_(consumes<std::vector<double>>(
+    : vectorToken_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("arrays"))) {
 
     product_ = produces<std::vector<double>>();
@@ -36,8 +36,8 @@ OffloadProducer::OffloadProducer(const edm::ParameterSet &config)
 }
 
 void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
-    edm::Handle<edm::WrapperBase> handle("std::vector<double>");
-    event.getByToken(token_, handle);
+    edm::Handle<edm::WrapperBase> vectorHandle("std::vector<double>");
+    event.getByToken(vectorToken_, vectorHandle);
 
     int mpiRank, mpiID;
     MPI_Comm_size(MPI_COMM_WORLD, &mpiRank);
@@ -58,7 +58,7 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 #endif
     times["eventNr"] = ++eventNr_;
     times["offloadStart"] = MPI_Wtime();
-    auto buffer = serialize(*handle);
+    auto buffer = serialize(*vectorHandle);
     MPI_Ssend(buffer.first.get(), buffer.second, 
               MPI_CHAR, workerPE, WORKTAG + mpiID,
               MPI_COMM_WORLD);
