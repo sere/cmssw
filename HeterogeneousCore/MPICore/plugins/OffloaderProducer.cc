@@ -52,21 +52,21 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 
     std::map<std::string, double> times;
 
-    times["eventNr"] = ++eventNr_;
-    times["offloadStart"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("OffloaderProducer")
             << "id: " << mpiID << " sending work with tag " << WORKTAG + mpiID;
 #endif
+    times["eventNr"] = ++eventNr_;
+    times["offloadStart"] = MPI_Wtime();
     auto buffer = serialize(*handle);
     MPI_Ssend(buffer.first.get(), buffer.second, 
               MPI_CHAR, gpu_pe, WORKTAG + mpiID,
               MPI_COMM_WORLD);
+    times["sendJobEnd"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("OffloaderProducer")
             << "id: " << mpiID << " sent work with tag " << WORKTAG + mpiID;
 #endif
-    times["sendJobEnd"] = MPI_Wtime();
 
     MPI_Message message;
     MPI_Status status;
@@ -81,11 +81,11 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     auto recv = std::make_unique<char[]>(size);
     MPI_Mrecv(recv.get(), size, MPI_CHAR, &message, &status);
     auto product = deserialize(recv.get(), size);
+    times["offloadEnd"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("OffloaderProducer")
             << "id: " << mpiID << " received with tag " << WORKTAG + mpiID;
 #endif
-    times["offloadEnd"] = MPI_Wtime();
 
     int count;
     MPI_Mprobe(gpu_pe, mpiID, MPI_COMM_WORLD, &message, &status);

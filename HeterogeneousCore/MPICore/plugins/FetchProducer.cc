@@ -62,11 +62,11 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     auto rec_buf = std::make_unique<char[]>(size);
     std::map<std::string, double> times;
     MPI_Mrecv(rec_buf.get(), size, MPI_CHAR, &message, &status);
+    times["jobStart"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("FetchProducer")
             << "stream " << sid_ << " received with tag " << status.MPI_TAG;
 #endif
-    times["jobStart"] = MPI_Wtime();
 
     auto timesUniquePtr =
             std::make_unique<std::map<std::string, double>>(times);

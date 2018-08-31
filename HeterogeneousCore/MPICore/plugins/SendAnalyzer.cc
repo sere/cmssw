@@ -54,20 +54,20 @@ void SendAnalyzer::analyze(edm::Event const &event,
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
-    times["jobEnd"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("SendAnalyzer")
             << "send sends tag " << *mpiTagHandle << ", stream " << sid_
             << " and cpuid " << *cpuIDHandle;
 #endif
+    times["jobEnd"] = MPI_Wtime();
     MPI_Ssend(buffer.first.get(), buffer.second,
               MPI_CHAR, *cpuIDHandle, *mpiTagHandle,
               MPI_COMM_WORLD);
+    times["sendResEnd"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("SendAnalyzer")
             << "stream " << sid_ << " finished sending data";
 #endif
-    times["sendResEnd"] = MPI_Wtime();
 
     std::vector<std::string> labels;
     std::vector<double> values;
