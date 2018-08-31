@@ -43,5 +43,6 @@ process.maxEvents = cms.untracked.PSet(
 )
 
 process.options = cms.untracked.PSet(
-    numberOfStreams = cms.untracked.uint32( options.streams )
+    numberOfStreams = cms.untracked.uint32( 0 ),
+    numberOfThreads = cms.untracked.uint32( options.streams )
 )
