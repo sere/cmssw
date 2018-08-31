@@ -25,13 +25,12 @@ process.fetch = cms.EDProducer("FetchProducer")
 process.work = cms.EDProducer("WorkProducer",
     runOnGPU = cms.bool(options.runOnGPU),
     job = cms.InputTag("fetch"),
-    cpuID = cms.InputTag("fetch"),
     times = cms.InputTag("fetch")
 )
 
 process.send = cms.EDAnalyzer("SendAnalyzer",
     result = cms.InputTag("work"),
-    cpuID = cms.InputTag("work"),
+    cpuID = cms.InputTag("fetch"),
     mpiTag = cms.InputTag("fetch", "mpiTag"),
     times = cms.InputTag("work")
 )

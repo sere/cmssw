@@ -36,7 +36,6 @@ private:
     void elementwiseDistance(std::vector<double> const &arrays,
                              std::vector<double> &result);
     edm::EDGetTokenT<std::vector<double>> token_;
-    edm::EDGetTokenT<int> cpuIDToken_;
     edm::EDGetTokenT<std::map<std::string, double>> timesToken_;
     double *dev_array_, *dev_result_;
     bool runOnGPU_;
@@ -45,7 +44,6 @@ private:
 WorkProducer::WorkProducer(const edm::ParameterSet &config)
     : token_(consumes<std::vector<double>>(
               config.getParameter<edm::InputTag>("job"))),
-      cpuIDToken_(consumes<int>(config.getParameter<edm::InputTag>("cpuID"))),
       timesToken_(consumes<std::map<std::string, double>>(
               config.getParameter<edm::InputTag>("times"))),
       runOnGPU_(config.getParameter<bool>("runOnGPU")) {
@@ -62,10 +60,8 @@ WorkProducer::WorkProducer(const edm::ParameterSet &config)
 
 void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     edm::Handle<std::vector<double>> handle;
-    edm::Handle<int> cpuIDHandle;
     edm::Handle<std::map<std::string, double>> timesHandle;
     event.getByToken(token_, handle);
-    event.getByToken(cpuIDToken_, cpuIDHandle);
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
@@ -83,9 +79,6 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     auto timesUniquePtr =
             std::make_unique<std::map<std::string, double>>(times);
     event.put(std::move(result));
-    std::unique_ptr<int> cpuID(new int);
-    *cpuID = *cpuIDHandle;
-    event.put(std::move(cpuID));
     event.put(std::move(timesUniquePtr));
 }
 
@@ -113,7 +106,6 @@ void WorkProducer::fillDescriptions(
     edm::ParameterSetDescription desc;
     desc.add<bool>("runOnGPU", false);
     desc.add<edm::InputTag>("job", edm::InputTag());
-    desc.add<edm::InputTag>("cpuID", edm::InputTag());
     desc.add<edm::InputTag>("times", edm::InputTag());
     descriptions.add("workProducer", desc);
 }
