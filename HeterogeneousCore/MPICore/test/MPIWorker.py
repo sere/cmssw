@@ -30,7 +30,7 @@ process.work = cms.EDProducer("WorkProducer",
 
 process.send = cms.EDAnalyzer("SendAnalyzer",
     result = cms.InputTag("work"),
-    cpuID = cms.InputTag("fetch"),
+    offloaderID = cms.InputTag("fetch"),
     mpiTag = cms.InputTag("fetch", "mpiTag"),
     times = cms.InputTag("work")
 )

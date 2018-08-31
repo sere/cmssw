@@ -72,9 +72,9 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
             std::make_unique<std::map<std::string, double>>(times);
     auto product = deserialize(rec_buf.get(), size);
     event.put(token_, std::move(product));
-    std::unique_ptr<int> cpuID(new int);
-    *cpuID = status.MPI_SOURCE;
-    event.put(std::move(cpuID));
+    std::unique_ptr<int> offloaderID(new int);
+    *offloaderID = status.MPI_SOURCE;
+    event.put(std::move(offloaderID));
     std::unique_ptr<int> mpiTag(new int);
     *mpiTag = status.MPI_TAG;
     event.put(std::move(mpiTag), "mpiTag");

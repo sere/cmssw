@@ -74,14 +74,14 @@ void PrintAnalyzer::globalEndJob(void const *Void) {
     //    MPI_Comm_size(MPI_COMM_WORLD, &mpiRank);
     //    MPI_Comm_rank(MPI_COMM_WORLD, &mpiID);
     //
-    //    MPI_Group world_group, cpu_group;
+    //    MPI_Group world_group, offloaderGroup;
     //    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
     //    const int ranks[] = {0};
-    //    MPI_Group_excl(world_group, 1, ranks, &cpu_group);
-    //    MPI_Comm CPU_comm;
-    //    MPI_Comm_create_group(MPI_COMM_WORLD, cpu_group, 0, &CPU_comm);
+    //    MPI_Group_excl(world_group, 1, ranks, &offloaderGroup);
+    //    MPI_Comm offloaderComm;
+    //    MPI_Comm_create_group(MPI_COMM_WORLD, offloaderGroup, 0, &offloaderComm);
     //
-    //    MPI_Barrier(CPU_comm);
+    //    MPI_Barrier(offloaderComm);
     //
     //    if (mpiID == mpiRank - 1) {
     //        MPI_Ssend(0, 0, MPI_CHAR, gpu_pe, DIETAG, MPI_COMM_WORLD);
