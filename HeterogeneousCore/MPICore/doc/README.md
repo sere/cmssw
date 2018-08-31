@@ -1,12 +1,12 @@
 # MPICore
 
-The module consists of two paths, `cpuNode` and `gpuNode`.
+The module consists of two paths, `MPIOffloader` and `MPIWorker`.
 They communicate between each other through MPI calls.
 
-## cpuNode
+## MPIOffloader
 
 This path acts as the master of the protocol. It creates and offloads
-work to be executed by `gpuNode`.
+work to be executed by `MPIWorker`.
   - ArraysProducer:EDProducer produces a std::vector<double> of 2000000
     random elements;
   - OffloadProducer::EDProducer consumes the vector and sends it to
@@ -15,7 +15,7 @@ work to be executed by `gpuNode`.
   - PrintAnalyzer::EDAnalyzer consumes the answer and prints on the
     terminal with edm::LogPrint().
 
-## gpuNode
+## MPIWorker
 
 This path acts as the slave of the protocol. It waits for the work that
 has to be executed.
@@ -43,7 +43,7 @@ To run the module with n events on N nodes and to perform the computation on gpu
 with M streams and vectors of length m issue
 
 ```
-mpirun -n 1 cmsRun test/gpuNode.py runOnGPU=True streams=M : -n N cmsRun test/cpuNode.py vlen=1e2 maxEvents=n
+mpirun -n 1 cmsRun test/MPIWorker.py runOnGPU=True streams=M : -n N cmsRun test/MPIOffloader.py vlen=1e2 maxEvents=n
 ```
 
 into the folder `HeterogeneousCore/MPICore/test`. This runs the two paths,
