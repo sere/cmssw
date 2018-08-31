@@ -5,6 +5,7 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/stream/EDProducer.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
@@ -53,7 +54,7 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     std::map<std::string, double> times;
 
 #if DEBUG
-    edm::LogPrint("OffloaderProducer")
+    edm::LogPrint("OffloadProducer")
             << "id: " << mpiID << " sending work with tag " << WORKTAG + mpiID;
 #endif
     times["eventNr"] = ++eventNr_;
@@ -64,14 +65,14 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
               MPI_COMM_WORLD);
     times["sendJobEnd"] = MPI_Wtime();
 #if DEBUG
-    edm::LogPrint("OffloaderProducer")
+    edm::LogPrint("OffloadProducer")
             << "id: " << mpiID << " sent work with tag " << WORKTAG + mpiID;
 #endif
 
     MPI_Message message;
     MPI_Status status;
 #if DEBUG
-    edm::LogPrint("OffloaderProducer")
+    edm::LogPrint("OffloadProducer")
             << "id: " << mpiID << " probing with tag " << WORKTAG + mpiID;
 #endif
     MPI_Mprobe(workerPE, WORKTAG + mpiID, MPI_COMM_WORLD, &message, &status);
@@ -83,7 +84,7 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     auto product = deserialize(recv.get(), size);
     times["offloadEnd"] = MPI_Wtime();
 #if DEBUG
-    edm::LogPrint("OffloaderProducer")
+    edm::LogPrint("OffloadProducer")
             << "id: " << mpiID << " received with tag " << WORKTAG + mpiID;
 #endif
 
