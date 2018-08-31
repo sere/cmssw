@@ -84,7 +84,7 @@ void PrintAnalyzer::globalEndJob(void const *Void) {
     //    MPI_Barrier(offloaderComm);
     //
     //    if (mpiID == mpiRank - 1) {
-    //        MPI_Ssend(0, 0, MPI_CHAR, gpu_pe, DIETAG, MPI_COMM_WORLD);
+    //        MPI_Ssend(0, 0, MPI_CHAR, workerPE, DIETAG, MPI_COMM_WORLD);
     //    }
 }
 

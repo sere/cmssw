@@ -60,7 +60,7 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     times["offloadStart"] = MPI_Wtime();
     auto buffer = serialize(*handle);
     MPI_Ssend(buffer.first.get(), buffer.second, 
-              MPI_CHAR, gpu_pe, WORKTAG + mpiID,
+              MPI_CHAR, workerPE, WORKTAG + mpiID,
               MPI_COMM_WORLD);
     times["sendJobEnd"] = MPI_Wtime();
 #if DEBUG
@@ -74,7 +74,7 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     edm::LogPrint("OffloaderProducer")
             << "id: " << mpiID << " probing with tag " << WORKTAG + mpiID;
 #endif
-    MPI_Mprobe(gpu_pe, WORKTAG + mpiID, MPI_COMM_WORLD, &message, &status);
+    MPI_Mprobe(workerPE, WORKTAG + mpiID, MPI_COMM_WORLD, &message, &status);
 
     int size;
     MPI_Get_count(&status, MPI_CHAR, &size);
@@ -88,7 +88,7 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 #endif
 
     int count;
-    MPI_Mprobe(gpu_pe, mpiID, MPI_COMM_WORLD, &message, &status);
+    MPI_Mprobe(workerPE, mpiID, MPI_COMM_WORLD, &message, &status);
     MPI_Get_count(&status, MPI_DOUBLE, &count);
     std::vector<double> values(count);
     MPI_Mrecv(static_cast<void *>(values.data()), count, MPI_DOUBLE, &message,
