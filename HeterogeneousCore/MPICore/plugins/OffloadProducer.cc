@@ -10,9 +10,9 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 
-#include "WrapperHandle.h"
+#include "HeterogeneousCore/MPICore/interface/WrapperHandle.h"
 #include "constants.h"
-#include "serialization.h"
+#include "HeterogeneousCore/MPICore/interface/serialization.h"
 
 class OffloadProducer : public edm::stream::EDProducer<> {
 public:
@@ -59,8 +59,8 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 #endif
     times["eventNr"] = ++eventNr_;
     times["offloadStart"] = MPI_Wtime();
-    auto buffer = serialize(*vectorHandle);
-    MPI_Ssend(buffer.first.get(), buffer.second, 
+    auto buffer = io::serialize(*vectorHandle);
+    MPI_Ssend(buffer.data(), buffer.size(), 
               MPI_CHAR, workerPE, WORKTAG + mpiID,
               MPI_COMM_WORLD);
     times["sendJobEnd"] = MPI_Wtime();
@@ -79,9 +79,9 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 
     int size;
     MPI_Get_count(&status, MPI_CHAR, &size);
-    auto recv = std::make_unique<char[]>(size);
-    MPI_Mrecv(recv.get(), size, MPI_CHAR, &message, &status);
-    auto product = deserialize(recv.get(), size);
+    io::unique_buffer write_buffer(size);
+    MPI_Mrecv(write_buffer.data(), size, MPI_CHAR, &message, &status);
+    auto product = io::deserialize(write_buffer);
     times["offloadEnd"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("OffloadProducer")

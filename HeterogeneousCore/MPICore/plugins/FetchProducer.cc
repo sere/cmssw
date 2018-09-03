@@ -10,9 +10,9 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/StreamID.h"
 
-#include "WrapperHandle.h"
+#include "HeterogeneousCore/MPICore/interface/WrapperHandle.h"
 #include "constants.h"
-#include "serialization.h"
+#include "HeterogeneousCore/MPICore/interface/serialization.h"
 
 class FetchProducer : public edm::stream::EDProducer<> {
 public:
@@ -59,18 +59,18 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 
     MPI_Get_count(&status, MPI_CHAR, &size);
 
-    auto rec_buf = std::make_unique<char[]>(size);
     std::map<std::string, double> times;
-    MPI_Mrecv(rec_buf.get(), size, MPI_CHAR, &message, &status);
+    io::unique_buffer write_buffer(size);
+    MPI_Mrecv(write_buffer.data(), size, MPI_CHAR, &message, &status);
     times["jobStart"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("FetchProducer")
             << "stream " << sid_ << " received with tag " << status.MPI_TAG;
 #endif
+    auto product = io::deserialize(write_buffer);
 
     auto timesUniquePtr =
             std::make_unique<std::map<std::string, double>>(times);
-    auto product = deserialize(rec_buf.get(), size);
     event.put(vectorToken_, std::move(product));
     std::unique_ptr<int> offloaderID(new int);
     *offloaderID = status.MPI_SOURCE;

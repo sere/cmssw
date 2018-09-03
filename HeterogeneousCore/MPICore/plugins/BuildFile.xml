@@ -2,4 +2,5 @@
 <use name="openmpi"/>
 <use name="FWCore/Framework"/>
 <use name="FWCore/ParameterSet"/>
+<use name="HeterogeneousCore/MPICore"/>
 <flags EDM_PLUGIN="1"/>

@@ -10,9 +10,9 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 
-#include "WrapperHandle.h"
+#include "HeterogeneousCore/MPICore/interface/WrapperHandle.h"
 #include "constants.h"
-#include "serialization.h"
+#include "HeterogeneousCore/MPICore/interface/serialization.h"
 
 class SendAnalyzer : public edm::stream::EDAnalyzer<> {
 public:
@@ -48,7 +48,7 @@ void SendAnalyzer::analyze(edm::Event const &event,
     edm::Handle<int> offloaderIDHandle, mpiTagHandle;
     edm::Handle<std::map<std::string, double>> timesHandle;
     event.getByToken(vectorToken_, vectorHandle);
-    auto buffer = serialize(*vectorHandle);
+    auto buffer = io::serialize(*vectorHandle);
     event.getByToken(offloaderIDToken_, offloaderIDHandle);
     event.getByToken(mpiTagToken_, mpiTagHandle);
     event.getByToken(timesToken_, timesHandle);
@@ -60,7 +60,7 @@ void SendAnalyzer::analyze(edm::Event const &event,
             << " and offloaderID " << *offloaderIDHandle;
 #endif
     times["jobEnd"] = MPI_Wtime();
-    MPI_Ssend(buffer.first.get(), buffer.second,
+    MPI_Ssend(buffer.data(), buffer.size(),
               MPI_CHAR, *offloaderIDHandle, *mpiTagHandle,
               MPI_COMM_WORLD);
     times["sendResEnd"] = MPI_Wtime();

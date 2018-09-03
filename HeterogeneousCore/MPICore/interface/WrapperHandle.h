@@ -1,5 +1,5 @@
-#ifndef WrapperHandle_h
-#define WrapperHandle_h
+#ifndef HeterogeneousCore_MPICore_interface_WrapperHandle_h
+#define HeterogeneousCore_MPICore_interface_WrapperHandle_h
 
 #include <cassert>
 #include <memory>
@@ -287,4 +287,4 @@ namespace edm {
 
 }
 
-#endif // WrapperHandle_h
+#endif // HeterogeneousCore_MPICore_interface_WrapperHandle_h
