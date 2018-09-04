@@ -90,14 +90,12 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
 
     int count;
     MPI_Mprobe(workerPE, mpiID, MPI_COMM_WORLD, &message, &status);
-    MPI_Get_count(&status, MPI_DOUBLE, &count);
-    std::vector<double> values(count);
-    MPI_Mrecv(static_cast<void *>(values.data()), count, MPI_DOUBLE, &message,
-              &status);
-
-    for (unsigned int i = 0; i < values.size(); i++) {
-        times[std::to_string(i)] = values[i];
-    }
+    MPI_Get_count(&status, MPI_BYTE, &count);
+    io::unique_buffer timesBuffer(count);
+    MPI_Mrecv(timesBuffer.data(), count, MPI_BYTE, &message, &status);
+    auto timesProduct = io::deserialize(timesBuffer);
+    auto timesWrapper = dynamic_cast<edm::Wrapper<std::map<std::string, double>>*>(timesProduct.get());
+    times.insert(timesWrapper->bareProduct().begin(), timesWrapper->bareProduct().end());
     auto timesUniquePtr = std::make_unique<std::map<std::string, double>>(times);
     event.put(product_, std::move(product));
     event.put(std::move(timesUniquePtr));

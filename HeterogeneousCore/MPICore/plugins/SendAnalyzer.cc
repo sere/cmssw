@@ -67,29 +67,21 @@ void SendAnalyzer::analyze(edm::Event const &event,
 #if DEBUG
     edm::LogPrint("SendAnalyzer")
             << "stream " << sid_ << " finished sending data";
+    for (auto time : times) {
+        edm::LogPrint("SendAnalyzer") << "times[" << time.first << "] = " << time.second;
+    }
 #endif
 
-    std::vector<std::string> labels;
-    std::vector<double> values;
-    for (auto time : times) {
-        labels.push_back(time.first);
-        values.push_back(time.second);
-    }
-#if DEBUG
-    for (unsigned int i = 0; i < labels.size(); i++) {
-        edm::LogPrint("SendAnalyzer") << i << ": " << labels[i];
-    }
-#endif
-    // MPI_Ssend(static_cast<void *>(labels.data()), sizeof(labels.data()),
-    // MPI_CHAR,
-    //           *offloaderIDHandle, 0, MPI_COMM_WORLD);
+    edm::Wrapper<std::map<std::string, double>> timesWrapper(std::move(times));
+    auto timesBuffer = io::serialize(timesWrapper);
+
 #if DEBUG
     edm::LogPrint("SendAnalyzer")
             << "send sends times " << *mpiTagHandle << ", stream " << sid_
             << " and offloaderID " << *offloaderIDHandle;
 #endif
-    MPI_Ssend(static_cast<void const *>(values.data()), values.size(),
-              MPI_DOUBLE, *offloaderIDHandle, *offloaderIDHandle, MPI_COMM_WORLD);
+    MPI_Ssend(timesBuffer.data(), timesBuffer.size(),
+              MPI_BYTE, *offloaderIDHandle, *offloaderIDHandle, MPI_COMM_WORLD);
 #if DEBUG
     edm::LogPrint("SendAnalyzer")
             << "stream " << sid_ << " finished sending times";
