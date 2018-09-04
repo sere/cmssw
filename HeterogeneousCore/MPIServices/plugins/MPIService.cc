@@ -8,14 +8,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
-
-class MPIService {
-public:
-  MPIService(edm::ParameterSet const& config, edm::ActivityRegistry & registry);
-  ~MPIService();
-
-  static void fillDescriptions(edm::ConfigurationDescriptions & descriptions);
-};
+#include "HeterogeneousCore/MPIServices/interface/MPIService.h"
 
 MPIService::MPIService(edm::ParameterSet const & config, edm::ActivityRegistry & registry)
 {
