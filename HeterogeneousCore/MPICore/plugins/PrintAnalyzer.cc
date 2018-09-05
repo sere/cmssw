@@ -49,13 +49,16 @@ void PrintAnalyzer::analyze(edm::Event const &event,
     event.getByToken(timesToken_, timesHandle);
     auto times = *timesHandle;
 
+    // for (auto time : (*timesHandle)) {
+    //     edm::LogPrint("PrintAnalyzer") << time.first << " " << time.second;
+    // }
     // std::cout << "algo, job, offload, send job, send answer, resAlloc";
 
-    std::cout << times["eventNr"] << ", " << times["algoEnd"] - times["algoStart"] << ", "
-              << times["jobEnd"] - times["jobStart"] << ", "
+    std::cout << times["eventNr"] << ", " << times["0"] - times["1"] << ", "
+              << times["2"] - times["3"] << ", "
               << times["offloadEnd"] - times["offloadStart"] << ", "
               << times["sendJobEnd"] - times["offloadStart"] << ", "
-              << times["sendResEnd"] - times["jobEnd"] << ", " << times["algoStart"] - times["preAllocRes"]
+              << times["5"] - times["2"] << ", " << times["1"] - times["4"]
               << std::endl;
 #if DEBUG
     edm::LogPrint("PrintAnalyzer")
