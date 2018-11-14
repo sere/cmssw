@@ -70,10 +70,12 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     times["preAllocRes"] = MPI_Wtime();
     auto result = std::make_unique<std::vector<double>>((*vectorHandle).size() / 2);
     times["algoStart"] = MPI_Wtime();
+    //------------work0------------
     if (runOnGPU_)
         call_cuda_kernel(*vectorHandle, *result, dev_array_, dev_result_);
     else
         elementwiseDistance(*vectorHandle, *result);
+    //------------work1------------
     times["algoEnd"] = MPI_Wtime();
 
     auto timesUniquePtr =

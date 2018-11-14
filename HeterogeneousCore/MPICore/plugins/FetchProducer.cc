@@ -45,7 +45,9 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     edm::LogPrint("FetchProducer")
             << "stream " << sid_ << " probing on ANY_TAG ";
 #endif
+    //------------fetch0------------
     MPI_Mprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &message, &status);
+    //------------fetch1------------
 #if DEBUG
     edm::LogPrint("FetchProducer")
             << "stream " << sid_ << " probed tag " << status.MPI_TAG;
@@ -57,11 +59,13 @@ void FetchProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     //        exit(0);
     //    }
 
+    //------------fetch2------------
     MPI_Get_count(&status, MPI_CHAR, &size);
 
     std::map<std::string, double> times;
     io::unique_buffer write_buffer(size);
     MPI_Mrecv(write_buffer.data(), size, MPI_CHAR, &message, &status);
+    //------------fetch3------------
     times["jobStart"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("FetchProducer")

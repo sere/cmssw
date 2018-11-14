@@ -60,9 +60,11 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     times["eventNr"] = ++eventNr_;
     times["offloadStart"] = MPI_Wtime();
     auto buffer = io::serialize(*vectorHandle);
+    //------------off0------------
     MPI_Ssend(buffer.data(), buffer.size(), 
               MPI_CHAR, workerPE, WORKTAG + mpiID,
               MPI_COMM_WORLD);
+    //------------off1------------
     times["sendJobEnd"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("OffloadProducer")
@@ -75,12 +77,14 @@ void OffloadProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     edm::LogPrint("OffloadProducer")
             << "id: " << mpiID << " probing with tag " << WORKTAG + mpiID;
 #endif
+    //------------off2------------
     MPI_Mprobe(workerPE, WORKTAG + mpiID, MPI_COMM_WORLD, &message, &status);
 
     int size;
     MPI_Get_count(&status, MPI_CHAR, &size);
     io::unique_buffer write_buffer(size);
     MPI_Mrecv(write_buffer.data(), size, MPI_CHAR, &message, &status);
+    //------------off3------------
     auto product = io::deserialize(write_buffer);
     times["offloadEnd"] = MPI_Wtime();
 #if DEBUG

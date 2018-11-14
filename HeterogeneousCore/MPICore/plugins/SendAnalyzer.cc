@@ -60,9 +60,11 @@ void SendAnalyzer::analyze(edm::Event const &event,
             << " and offloaderID " << *offloaderIDHandle;
 #endif
     times["jobEnd"] = MPI_Wtime();
+    //------------send0------------
     MPI_Ssend(buffer.data(), buffer.size(),
               MPI_CHAR, *offloaderIDHandle, *mpiTagHandle,
               MPI_COMM_WORLD);
+    //------------send1------------
     times["sendResEnd"] = MPI_Wtime();
 #if DEBUG
     edm::LogPrint("SendAnalyzer")
