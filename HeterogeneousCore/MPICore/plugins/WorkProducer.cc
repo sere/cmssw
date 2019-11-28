@@ -33,7 +33,7 @@ private:
     void produce(edm::Event &event, edm::EventSetup const &setup) override;
     void addVector(std::vector<double> const &arrays,
                    std::vector<double> &result);
-    void elementwiseDistance(std::vector<double> const &arrays,
+    void rss(std::vector<double> const &arrays,
                              std::vector<double> &result);
     edm::EDGetTokenT<std::vector<double>> vectorToken_;
     edm::EDGetTokenT<std::map<std::string, double>> timesToken_;
@@ -74,7 +74,7 @@ void WorkProducer::produce(edm::Event &event, edm::EventSetup const &setup) {
     if (runOnGPU_)
         call_cuda_kernel(*vectorHandle, *result, dev_array_, dev_result_);
     else
-        elementwiseDistance(*vectorHandle, *result);
+        rss(*vectorHandle, *result);
     //------------work1------------
     times["algoEnd"] = MPI_Wtime();
 
@@ -94,7 +94,7 @@ void WorkProducer::addVector(std::vector<double> const &arrays,
     }
 }
 
-void WorkProducer::elementwiseDistance(std::vector<double> const &arrays,
+void WorkProducer::rss(std::vector<double> const &arrays,
                                        std::vector<double> &result) {
     for (unsigned int i = 0; i < result.size(); i++) {
         result[i] = std::sqrt(arrays[i] * arrays[i] +
